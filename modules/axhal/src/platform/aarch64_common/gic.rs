@@ -7,7 +7,8 @@ use spinlock::SpinNoIrq;
 pub const MAX_IRQ_COUNT: usize = 1024;
 
 /// The timer IRQ number.
-pub const TIMER_IRQ_NUM: usize = 30; // physical timer, type=PPI, id=14
+/// physical timer, type=PPI, id=14
+pub const TIMER_IRQ_NUM: usize = 30;
 
 const GICD_BASE: PhysAddr = PhysAddr::from(axconfig::GICD_PADDR);
 const GICC_BASE: PhysAddr = PhysAddr::from(axconfig::GICC_PADDR);
@@ -20,6 +21,7 @@ static GICC: GicCpuInterface = GicCpuInterface::new(phys_to_virt(GICC_BASE).as_m
 
 /// Enables or disables the given IRQ.
 pub fn set_enable(irq_num: usize, enabled: bool) {
+    trace!("GICD set enable {} {}", irq_num, enabled);
     GICD.lock().set_enable(irq_num as _, enabled);
 }
 
@@ -28,6 +30,7 @@ pub fn set_enable(irq_num: usize, enabled: bool) {
 /// It also enables the IRQ if the registration succeeds. It returns `false` if
 /// the registration failed.
 pub fn register_handler(irq_num: usize, handler: IrqHandler) -> bool {
+    trace!("register handler irq {}", irq_num);
     crate::irq::register_handler_common(irq_num, handler)
 }
 
@@ -37,7 +40,10 @@ pub fn register_handler(irq_num: usize, handler: IrqHandler) -> bool {
 /// up in the IRQ handler table and calls the corresponding handler. If
 /// necessary, it also acknowledges the interrupt controller after handling.
 pub fn dispatch_irq(_unused: usize) {
-    GICC.handle_irq(|irq_num| crate::irq::dispatch_irq_common(irq_num as _));
+    GICC.handle_irq(|irq_num| {
+        trace!("GICC handle irq {}", irq_num);
+        crate::irq::dispatch_irq_common(irq_num as _);
+    });
 }
 
 /// Initializes GICD, GICC on the primary CPU.

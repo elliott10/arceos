@@ -44,6 +44,13 @@ cfg_if::cfg_if! {
         #[rustfmt::skip]
         #[path = "config_raspi4_aarch64.rs"]
         mod config;
+    } else if #[cfg(all(
+        any(target_arch = "aarch64", not(target_os = "none")),
+        feature = "platform-bsta1000b-fada-aarch64"
+    ))] {
+        #[rustfmt::skip]
+        #[path = "config_bsta1000b_fada_aarch64.rs"]
+        mod config;
     } else {
         #[rustfmt::skip]
         #[path = "config_dummy.rs"]

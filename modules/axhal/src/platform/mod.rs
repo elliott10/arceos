@@ -31,6 +31,12 @@ cfg_if::cfg_if! {
     ))] {
         mod raspi4_aarch64;
         pub use self::raspi4_aarch64::*;
+    } else if #[cfg(all(
+        target_arch = "aarch64",
+        feature = "platform-bsta1000b-fada-aarch64"
+    ))] {
+        mod bsta1000b_fada_aarch64;
+        pub use self::bsta1000b_fada_aarch64::*;
     } else {
         mod dummy;
         pub use self::dummy::*;

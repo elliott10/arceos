@@ -14,6 +14,7 @@ platform-pc-x86 = []
 platform-qemu-virt-riscv = []
 platform-qemu-virt-aarch64 = []
 platform-raspi4-aarch64 = []
+platform-bsta1000b-fada-aarch64 = []
 default = []
 
 [dependencies]
