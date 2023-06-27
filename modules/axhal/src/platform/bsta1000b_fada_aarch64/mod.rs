@@ -1,3 +1,5 @@
+mod dw_apb_uart;
+
 pub mod mem;
 
 #[cfg(feature = "smp")]
@@ -9,34 +11,7 @@ pub mod irq {
 }
 
 pub mod console {
-    //pub use crate::platform::aarch64_common::pl011::*;
-    const UART0_ADDR: usize = axconfig::UART_PADDR + axconfig::PHYS_VIRT_OFFSET;
-
-    /// Example of putchar:
-    /// console::putchar(b'X');
-    ///
-    /// let ptr = 0x20008000 as *mut u32;
-    /// ptr.add(0).write_volatile(b'E' as u32);
-    pub fn putchar(c: u8) {
-        let ptr = UART0_ADDR as *mut u32;
-        unsafe {
-            //LSR bit:LSR_TEMT
-            while ptr.add(5).read_volatile() & (1 << 6) == 0 {}
-
-            ptr.add(0).write_volatile(c as u32);
-        }
-    }
-    pub fn getchar() -> Option<u8> {
-        let ptr = UART0_ADDR as *mut u32;
-        unsafe {
-            //Check LSR bit:DR
-            if ptr.add(5).read_volatile() & 0b1 == 0 {
-                None
-            } else {
-                Some((ptr.add(0).read_volatile() & 0xff) as u8)
-            }
-        }
-    }
+    pub use super::dw_apb_uart::*;
 }
 
 pub mod time {
@@ -58,7 +33,7 @@ pub(crate) unsafe extern "C" fn rust_entry(cpu_id: usize, dtb: usize) {
     crate::mem::clear_bss();
     crate::arch::set_exception_vector_base(exception_vector_base as usize);
     crate::cpu::init_primary(cpu_id);
-    //super::aarch64_common::pl011::init_early();
+    dw_apb_uart::init_early();
     super::aarch64_common::generic_timer::init_early();
     rust_main(cpu_id, dtb);
 }
