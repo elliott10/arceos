@@ -4,7 +4,7 @@ use memory_addr::{PhysAddr, VirtAddr};
 use spinlock::SpinNoIrq;
 use tock_registers::interfaces::{Readable, Writeable};
 use tock_registers::register_structs;
-use tock_registers::registers::{ReadOnly, ReadWrite, WriteOnly};
+use tock_registers::registers::{ReadOnly, ReadWrite};
 
 use crate::mem::phys_to_virt;
 
@@ -20,13 +20,13 @@ register_structs! {
         (0x08 => fcr: ReadWrite<u32>),
         (0x0c => lcr: ReadWrite<u32>),
         (0x10 => mcr: ReadWrite<u32>),
-        (0x14 => lsr: ReadWrite<u32>),
-        (0x18 => msr: ReadWrite<u32>),
+        (0x14 => lsr: ReadOnly<u32>),
+        (0x18 => msr: ReadOnly<u32>),
         (0x1c => scr: ReadWrite<u32>),
         (0x20 => lpdll: ReadWrite<u32>),
         (0x24 => _reserved0),
         /// Uart Status Register.
-        (0x7c => usr: ReadWrite<u32>),
+        (0x7c => usr: ReadOnly<u32>),
         (0x80 => _reserved1),
         (0xc0 => dlf: ReadWrite<u32>),
         (0xc4 => @END),
@@ -88,9 +88,6 @@ impl DW8250 {
         /* Set data length to 8 bit, 1 stop bit, no parity. Set LCR_WLS1 | LCR_WLS0 */
         self.regs().lcr.set(self.regs().lcr.get() | 0b11);
 
-        // Enable interrupts
-        //self.regs().ier.set(1);
-
         dmb();
     }
 
@@ -108,6 +105,16 @@ impl DW8250 {
             Some((self.regs().rbr.get() & 0xff) as u8)
         } else {
             None
+        }
+    }
+
+    fn set_ier(&mut self, enable: bool) {
+        if enable {
+            // Enable interrupts
+            self.regs().ier.set(1);
+        } else {
+            // Disable interrupts
+            self.regs().ier.set(0);
         }
     }
 }
@@ -136,22 +143,21 @@ pub fn getchar() -> Option<u8> {
     UART.lock().getchar()
 }
 
-pub(super) fn init_early() {
+/// UART simply initialize
+pub fn init_early() {
     UART.lock().init();
+}
 
+/// Set UART IRQ Enable
+pub fn init_irq() {
+    UART.lock().set_ier(true);
+
+    #[cfg(feature = "irq")]
+    // IRQ Type: SPI
+    crate::irq::register_handler(32 + axconfig::UART_IRQ_NUM, handle);
 }
 
 /// UART IRQ Handler
 pub fn handle() {
-    debug!("uart irq handler");
-    /*
-    let is_receive_interrupt = UART.lock().is_receive_interrupt();
-    UART.lock().ack_interrupts();
-    if is_receive_interrupt {
-        while let Some(c) = getchar() {
-            putchar(c);
-        }
-    }
-    */
+    trace!("Uart IRQ Handler");
 }
-// crate::irq::register_handler(axconfig::UART_IRQ_NUM, handle);

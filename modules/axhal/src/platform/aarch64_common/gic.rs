@@ -7,8 +7,8 @@ use spinlock::SpinNoIrq;
 pub const MAX_IRQ_COUNT: usize = 1024;
 
 /// The timer IRQ number.
-/// physical timer, type=PPI, id=14
-pub const TIMER_IRQ_NUM: usize = 30;
+/// EL1 physical timer, type=PPI, id=14
+pub const TIMER_IRQ_NUM: usize = 16 + 14;
 
 const GICD_BASE: PhysAddr = PhysAddr::from(axconfig::GICD_PADDR);
 const GICC_BASE: PhysAddr = PhysAddr::from(axconfig::GICC_PADDR);
