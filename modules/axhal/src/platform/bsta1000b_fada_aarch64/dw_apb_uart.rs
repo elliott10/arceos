@@ -116,6 +116,7 @@ impl DW8250 {
             // Disable interrupts
             self.regs().ier.set(0);
         }
+        dmb();
     }
 }
 

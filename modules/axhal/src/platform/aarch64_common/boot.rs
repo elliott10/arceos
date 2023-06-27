@@ -117,28 +117,6 @@ unsafe extern "C" fn _start() -> ! {
         and     x19, x19, #0xffffff     // get current CPU id
         mov     x20, x0                 // save DTB pointer
 
-        // Disable MMU
-        mrs x9, sctlr_el2
-        bic x9, x9, #(1<<12) // disable iCache
-        bic x9, x9, #(1<<2)  // disable dCache
-        bic x9, x9, #1       // disable MMU
-        msr sctlr_el2, x9
-        isb
-
-        // Uart0 = 0x20008000
-        mov x9, #0x8000
-        movk x9, #0x2000, lsl #16
-
-        // ID Hi
-        add x10, x19, #48
-        str x10, [x9]
-        mov x10, #72
-        str x10, [x9]
-        mov x10, #105
-        str x10, [x9]
-        mov x10, #10
-        str x10, [x9]
-
         adrp    x8, {boot_stack}        // setup boot stack
         add     x8, x8, {boot_stack_size}
         mov     sp, x8
