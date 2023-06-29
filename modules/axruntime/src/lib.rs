@@ -250,7 +250,6 @@ fn remap_kernel_memory() -> Result<(), axhal::paging::PagingError> {
 #[cfg(feature = "irq")]
 fn init_interrupt() {
     use axhal::time::TIMER_IRQ_NUM;
-    use axhal::irq::{IntIdType, gic_irq_tran};
 
     // Setup timer interrupt handler
     const PERIODIC_INTERVAL_NANOS: u64 =
@@ -270,7 +269,7 @@ fn init_interrupt() {
         axhal::time::set_oneshot_timer(deadline);
     }
 
-    axhal::irq::register_handler(gic_irq_tran(TIMER_IRQ_NUM, IntIdType::PPI), || {
+    axhal::irq::register_handler(TIMER_IRQ_NUM, || {
         update_timer();
         #[cfg(feature = "multitask")]
         axtask::on_timer_tick();

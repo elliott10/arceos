@@ -8,7 +8,7 @@ pub const MAX_IRQ_COUNT: usize = 1024;
 
 /// The timer IRQ number.
 /// EL1 physical timer, type=PPI, id=14
-pub const TIMER_IRQ_NUM: usize = 14;
+pub const TIMER_IRQ_NUM: usize = 16 + 14;
 
 const GICD_BASE: PhysAddr = PhysAddr::from(axconfig::GICD_PADDR);
 const GICC_BASE: PhysAddr = PhysAddr::from(axconfig::GICC_PADDR);
@@ -29,6 +29,7 @@ pub enum IntIdType {
 }
 
 /// Translate a GIC irq domain hardware interrupt ID into the real ID
+#[allow(dead_code)]
 pub fn gic_irq_tran(hwirq: usize, int_id_type: IntIdType) -> usize {
     match int_id_type {
         IntIdType::PPI => {
