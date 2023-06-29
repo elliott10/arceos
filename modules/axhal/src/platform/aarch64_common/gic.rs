@@ -32,18 +32,10 @@ pub enum IntIdType {
 #[allow(dead_code)]
 pub fn gic_irq_tran(hwirq: usize, int_id_type: IntIdType) -> usize {
     match int_id_type {
-        IntIdType::PPI => {
-            hwirq + IntIdType::PPI as usize
-        },
-        IntIdType::SPI => {
-            hwirq + IntIdType::SPI as usize
-        },
-        IntIdType::EPPI => {
-            hwirq + IntIdType::EPPI as usize
-        },
-        IntIdType::ESPI => {
-            hwirq + IntIdType::ESPI as usize
-        },
+        IntIdType::PPI => hwirq + IntIdType::PPI as usize,
+        IntIdType::SPI => hwirq + IntIdType::SPI as usize,
+        IntIdType::EPPI => hwirq + IntIdType::EPPI as usize,
+        IntIdType::ESPI => hwirq + IntIdType::ESPI as usize,
         _ => {
             warn!("Unknown interrupt ID type: {}", int_id_type as usize);
             hwirq

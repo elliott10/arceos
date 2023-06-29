@@ -52,7 +52,7 @@ impl DW8250 {
         const BAUDRATE: u32 = 115200;
         //const BAUDRATE: u32 = 38400;
 
-        let get_baud_divider = |baudrate| { (UART_SRC_CLK << (BST_UART_DLF_LEN - 4)) / baudrate };
+        let get_baud_divider = |baudrate| (UART_SRC_CLK << (BST_UART_DLF_LEN - 4)) / baudrate;
         let divider = get_baud_divider(BAUDRATE);
 
         // Waiting to be no USR_BUSY.
@@ -77,7 +77,9 @@ impl DW8250 {
 
         /* Set baud rate. Set DLL, DLH, DLF */
         self.regs().rbr.set((divider >> BST_UART_DLF_LEN) & 0xff);
-        self.regs().ier.set((divider >> (BST_UART_DLF_LEN + 8)) & 0xff);
+        self.regs()
+            .ier
+            .set((divider >> (BST_UART_DLF_LEN + 8)) & 0xff);
         self.regs().dlf.set(divider & ((1 << BST_UART_DLF_LEN) - 1));
 
         /* Clear DLAB bit */
@@ -155,7 +157,7 @@ pub fn init_irq() {
 
     #[cfg(feature = "irq")]
     {
-        use crate::platform::aarch64_common::gic::{IntIdType, gic_irq_tran};
+        use crate::platform::aarch64_common::gic::{gic_irq_tran, IntIdType};
         // IRQ Type: SPI
         crate::irq::register_handler(gic_irq_tran(axconfig::UART_IRQ_NUM, IntIdType::SPI), handle);
     }
