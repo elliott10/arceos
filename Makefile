@@ -81,6 +81,8 @@ include scripts/make/build.mk
 include scripts/make/test.mk
 ifeq ($(PLATFORM), raspi4-aarch64)
   include scripts/make/raspi4.mk
+else ifeq ($(PLATFORM), bsta1000b-fada-aarch64)
+  include scripts/make/bsta1000b-fada.mk
 endif
 
 build: $(OUT_DIR) $(OUT_BIN)

@@ -11,12 +11,11 @@
 	images {
 		kernel {
 			description = "ArceOS for BST A1000B";
-			data = /incbin/("./apps/fs/shell/shell_bsta1000b-fada-aarch64.bin");
+			data = /incbin/("../../arceos-fada.bin.gz");
 			type = "kernel";
 			arch = "arm64";
 			os = "linux";
-			/* compression = "gzip"; */
-			compression = "none";
+			compression = "gzip";
 			load = <0x81000000>;
 			entry = <0x81000000>;
 			hash-1 {
@@ -29,7 +28,7 @@
 
 		fdt-fada {
 			description = "bsta1000b-fada fdt";
-			data = /incbin/("./bsta1000b-fada0.dtb");
+			data = /incbin/("./bsta1000b-fada.dtb");
 			type = "flat_dt";
 			arch = "arm64";
 			compression = "none";

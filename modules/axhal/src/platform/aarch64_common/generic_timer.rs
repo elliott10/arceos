@@ -55,6 +55,8 @@ pub(crate) fn init_percpu() {
     {
         CNTP_CTL_EL0.write(CNTP_CTL_EL0::ENABLE::SET);
         CNTP_TVAL_EL0.set(0);
-        crate::platform::irq::set_enable(crate::platform::irq::TIMER_IRQ_NUM, true);
+
+        use crate::platform::irq::{TIMER_IRQ_NUM, IntIdType, gic_irq_tran};
+        crate::platform::irq::set_enable(gic_irq_tran(TIMER_IRQ_NUM, IntIdType::PPI), true);
     }
 }

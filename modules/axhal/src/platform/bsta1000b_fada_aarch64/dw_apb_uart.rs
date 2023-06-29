@@ -154,8 +154,11 @@ pub fn init_irq() {
     UART.lock().set_ier(true);
 
     #[cfg(feature = "irq")]
-    // IRQ Type: SPI
-    crate::irq::register_handler(32 + axconfig::UART_IRQ_NUM, handle);
+    {
+        use crate::platform::aarch64_common::gic::{IntIdType, gic_irq_tran};
+        // IRQ Type: SPI
+        crate::irq::register_handler(gic_irq_tran(axconfig::UART_IRQ_NUM, IntIdType::SPI), handle);
+    }
 }
 
 /// UART IRQ Handler

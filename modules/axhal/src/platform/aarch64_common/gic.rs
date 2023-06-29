@@ -8,7 +8,7 @@ pub const MAX_IRQ_COUNT: usize = 1024;
 
 /// The timer IRQ number.
 /// EL1 physical timer, type=PPI, id=14
-pub const TIMER_IRQ_NUM: usize = 16 + 14;
+pub const TIMER_IRQ_NUM: usize = 14;
 
 const GICD_BASE: PhysAddr = PhysAddr::from(axconfig::GICD_PADDR);
 const GICC_BASE: PhysAddr = PhysAddr::from(axconfig::GICC_PADDR);
@@ -18,6 +18,37 @@ static GICD: SpinNoIrq<GicDistributor> =
 
 // per-CPU, no lock
 static GICC: GicCpuInterface = GicCpuInterface::new(phys_to_virt(GICC_BASE).as_mut_ptr());
+
+#[allow(dead_code)]
+pub enum IntIdType {
+    LPI = 0,
+    PPI = 16,
+    SPI = 32,
+    EPPI = 1056,
+    ESPI = 4096,
+}
+
+/// Translate a GIC irq domain hardware interrupt ID into the real ID
+pub fn gic_irq_tran(hwirq: usize, int_id_type: IntIdType) -> usize {
+    match int_id_type {
+        IntIdType::PPI => {
+            hwirq + IntIdType::PPI as usize
+        },
+        IntIdType::SPI => {
+            hwirq + IntIdType::SPI as usize
+        },
+        IntIdType::EPPI => {
+            hwirq + IntIdType::EPPI as usize
+        },
+        IntIdType::ESPI => {
+            hwirq + IntIdType::ESPI as usize
+        },
+        _ => {
+            warn!("Unknown interrupt ID type: {}", int_id_type as usize);
+            hwirq
+        }
+    }
+}
 
 /// Enables or disables the given IRQ.
 pub fn set_enable(irq_num: usize, enabled: bool) {
