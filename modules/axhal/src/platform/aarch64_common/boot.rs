@@ -58,39 +58,9 @@ unsafe fn switch_to_el1() {
 }
 
 unsafe fn init_mmu() {
-    // Device-nGnRE memory
-    let attr0 = MAIR_EL1::Attr0_Device::nonGathering_nonReordering_EarlyWriteAck;
-    // Normal memory
-    let attr1 = MAIR_EL1::Attr1_Normal_Inner::WriteBack_NonTransient_ReadWriteAlloc
-        + MAIR_EL1::Attr1_Normal_Outer::WriteBack_NonTransient_ReadWriteAlloc;
-    MAIR_EL1.write(attr0 + attr1); // 0xff_04
-
-    // Enable TTBR0 and TTBR1 walks, page size = 4K, vaddr size = 48 bits, paddr size = 40 bits.
-    let tcr_flags0 = TCR_EL1::EPD0::EnableTTBR0Walks
-        + TCR_EL1::TG0::KiB_4
-        + TCR_EL1::SH0::Inner
-        + TCR_EL1::ORGN0::WriteBack_ReadAlloc_WriteAlloc_Cacheable
-        + TCR_EL1::IRGN0::WriteBack_ReadAlloc_WriteAlloc_Cacheable
-        + TCR_EL1::T0SZ.val(16);
-    let tcr_flags1 = TCR_EL1::EPD1::EnableTTBR1Walks
-        + TCR_EL1::TG1::KiB_4
-        + TCR_EL1::SH1::Inner
-        + TCR_EL1::ORGN1::WriteBack_ReadAlloc_WriteAlloc_Cacheable
-        + TCR_EL1::IRGN1::WriteBack_ReadAlloc_WriteAlloc_Cacheable
-        + TCR_EL1::T1SZ.val(16);
-    TCR_EL1.write(TCR_EL1::IPS::Bits_48 + tcr_flags0 + tcr_flags1);
-    barrier::isb(barrier::SY);
-
-    // Set both TTBR0 and TTBR1
-    let root_paddr = PhysAddr::from(BOOT_PT_L0.as_ptr() as usize).as_usize() as _;
-    TTBR0_EL1.set(root_paddr);
-    TTBR1_EL1.set(root_paddr);
-
-    // Flush the entire TLB
-    crate::arch::flush_tlb(None);
-
-    // Enable the MMU and turn on I-cache and D-cache
-    SCTLR_EL1.modify(SCTLR_EL1::M::Enable + SCTLR_EL1::C::Cacheable + SCTLR_EL1::I::Cacheable);
+    // make A=apps/helloworld ARCH=aarch64 LOG=trace run
+    // Disable MMU and Turn off I-cache and D-cache
+    SCTLR_EL1.modify(SCTLR_EL1::M::Disable + SCTLR_EL1::I::NonCacheable + SCTLR_EL1::C::NonCacheable);
     barrier::isb(barrier::SY);
 }
 
