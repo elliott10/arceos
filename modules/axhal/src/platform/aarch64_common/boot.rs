@@ -34,6 +34,10 @@ unsafe fn switch_to_el1() {
             );
             ELR_EL3.set(LR.get());
         }
+
+        // Disable EL2 MMU
+        SCTLR_EL2.modify(SCTLR_EL2::M::Disable + SCTLR_EL2::I::NonCacheable + SCTLR_EL2::C::NonCacheable);
+
         // Disable EL1 timer traps and the timer offset.
         CNTHCTL_EL2.modify(CNTHCTL_EL2::EL1PCEN::SET + CNTHCTL_EL2::EL1PCTEN::SET);
         CNTVOFF_EL2.set(0);
