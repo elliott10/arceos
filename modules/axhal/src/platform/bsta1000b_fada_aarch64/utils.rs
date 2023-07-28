@@ -1,6 +1,6 @@
-use core::ptr::{read_volatile, write_volatile};
-use crate::time::{busy_wait, Duration};
 use crate::mem::phys_to_virt;
+use crate::time::{busy_wait, Duration};
+use core::ptr::{read_volatile, write_volatile};
 
 /// 微秒(us) 延时器
 pub fn usdelay(us: u64) {
@@ -36,7 +36,9 @@ pub fn reset_cpu() {
 
     //Data Width = 32
     let ptr = phys_to_virt((axconfig::A1000BASE_SAFETYCRM + 0x8).into()).as_mut_ptr() as *mut u32;
-    unsafe { write_volatile(ptr, read_volatile(ptr) & !0b1); }
+    unsafe {
+        write_volatile(ptr, read_volatile(ptr) & !0b1);
+    }
 
     loop {}
 }

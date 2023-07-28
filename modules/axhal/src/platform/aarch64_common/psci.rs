@@ -4,10 +4,7 @@
 
 use core::arch::asm;
 
-const PSCI_CPU_ON: u32 = 0x8400_0003;
-const PSCI_SYSTEM_OFF: u32 = 0x8400_0008;
-
-fn psci_hvc_call(func: u32, arg0: usize, arg1: usize, arg2: usize) -> usize {
+fn psci_hvc_call(func: usize, arg0: usize, arg1: usize, arg2: usize) -> usize {
     let ret;
     unsafe {
         asm!(
@@ -24,7 +21,7 @@ fn psci_hvc_call(func: u32, arg0: usize, arg1: usize, arg2: usize) -> usize {
 /// Shutdown the whole system, including all CPUs.
 pub fn system_off() -> ! {
     info!("Shutting down...");
-    psci_hvc_call(PSCI_SYSTEM_OFF, 0, 0, 0);
+    psci_hvc_call(axconfig::PSCI_CPU_OFF, 0, 0, 0);
     warn!("It should shutdown!");
     loop {
         crate::arch::halt();
@@ -37,7 +34,7 @@ pub fn system_off() -> ! {
 /// corresponding register to the given argument.
 pub fn cpu_on(id: usize, entry: usize, arg: usize) {
     debug!("Starting core {}...", id);
-    assert_eq!(psci_hvc_call(PSCI_CPU_ON, id, entry, arg), 0);
+    assert_eq!(psci_hvc_call(axconfig::PSCI_CPU_ON, id, entry, arg), 0);
     debug!("Started core {}!", id);
 }
 
@@ -58,26 +55,26 @@ fn arm_smccc_smc(fn_id: usize, arg0: usize, arg1: usize, arg2: usize) -> usize {
 
 pub fn invoke_psci_fn(fn_id: usize, arg0: usize, arg1: usize, arg2: usize) -> usize {
     // SMCCC_CONDUIT_SMC = 1
-       arm_smccc_smc(fn_id, arg0, arg1, arg2)
+    arm_smccc_smc(fn_id, arg0, arg1, arg2)
 }
 
 pub fn psci_0_1_cpu_on(fn_ids: u32, cpuid: usize, entry_point: usize, arg: usize) -> i32 {
-   let err: i32 = invoke_psci_fn(fn_ids as usize, cpuid, entry_point, arg) as i32;
-   psci_errno_tran(err)
+    let err: i32 = invoke_psci_fn(fn_ids as usize, cpuid, entry_point, arg) as i32;
+    psci_errno_tran(err)
 }
 
 pub fn psci_0_1_cpu_off(fn_ids: u32, state: u32) -> i32 {
-   let err: i32 = invoke_psci_fn(fn_ids as usize, state as usize, 0, 0) as i32;
-   psci_errno_tran(err)
+    let err: i32 = invoke_psci_fn(fn_ids as usize, state as usize, 0, 0) as i32;
+    psci_errno_tran(err)
 }
 
 pub fn psci_0_1_cpu_suspend(fn_ids: u32, state: u32, entry_point: usize) -> i32 {
-   let err: i32 = invoke_psci_fn(fn_ids as usize, state as usize, entry_point, 0) as i32;
-   psci_errno_tran(err)
+    let err: i32 = invoke_psci_fn(fn_ids as usize, state as usize, entry_point, 0) as i32;
+    psci_errno_tran(err)
 }
 pub fn psci_0_1_migrate(fn_ids: u32, cpuid: usize) -> i32 {
-   let err: i32 = invoke_psci_fn(fn_ids as usize, cpuid, 0, 0) as i32;
-   psci_errno_tran(err)
+    let err: i32 = invoke_psci_fn(fn_ids as usize, cpuid, 0, 0) as i32;
+    psci_errno_tran(err)
 }
 
 /// PSCI v0.1
@@ -103,25 +100,39 @@ pub fn psci_cpu_off(cpuid: usize, entry_point: usize) {
 pub fn psci_errno_tran(errno: i32) -> i32 {
     //EINVAL
     let mut ret = -22;
-    let errno_tran =
-        match errno {
-            0 => { ret = 0; PsciRetNo::PSCI_RET_SUCCESS         },
-            // EOPNOTSUPP
-            -1 => { ret = -95; PsciRetNo::PSCI_RET_NOT_SUPPORTED   },
-            -2 => { ret = -22; PsciRetNo::PSCI_RET_INVALID_PARAMS  },
-            // EPERM
-            -3 => { ret = -1; PsciRetNo::PSCI_RET_DENIED          },
-            -4 => { PsciRetNo::PSCI_RET_ALREADY_ON      },
-            -5 => { PsciRetNo::PSCI_RET_ON_PENDING      },
-            -6 => { PsciRetNo::PSCI_RET_INTERNAL_FAILURE},
-            -7 => { PsciRetNo::PSCI_RET_NOT_PRESENT     },
-            -8 => { PsciRetNo::PSCI_RET_DISABLED        },
-            -9 => { ret = -22; PsciRetNo::PSCI_RET_INVALID_ADDRESS },
-            _ => {
-                warn!("Unknown psci errno: {}", errno);
-                PsciRetNo::PSCI_RET_INVALID_PARAMS
-            }
-        };
+    let errno_tran = match errno {
+        0 => {
+            ret = 0;
+            PsciRetNo::PSCI_RET_SUCCESS
+        }
+        // EOPNOTSUPP
+        -1 => {
+            ret = -95;
+            PsciRetNo::PSCI_RET_NOT_SUPPORTED
+        }
+        -2 => {
+            ret = -22;
+            PsciRetNo::PSCI_RET_INVALID_PARAMS
+        }
+        // EPERM
+        -3 => {
+            ret = -1;
+            PsciRetNo::PSCI_RET_DENIED
+        }
+        -4 => PsciRetNo::PSCI_RET_ALREADY_ON,
+        -5 => PsciRetNo::PSCI_RET_ON_PENDING,
+        -6 => PsciRetNo::PSCI_RET_INTERNAL_FAILURE,
+        -7 => PsciRetNo::PSCI_RET_NOT_PRESENT,
+        -8 => PsciRetNo::PSCI_RET_DISABLED,
+        -9 => {
+            ret = -22;
+            PsciRetNo::PSCI_RET_INVALID_ADDRESS
+        }
+        _ => {
+            warn!("Unknown psci errno: {}", errno);
+            PsciRetNo::PSCI_RET_INVALID_PARAMS
+        }
+    };
     info!("PSCI return: {:?}", errno_tran);
     ret
 }
@@ -129,14 +140,14 @@ pub fn psci_errno_tran(errno: i32) -> i32 {
 /// PSCI return values, inclusive of all PSCI versions
 #[derive(Debug)]
 pub enum PsciRetNo {
-    PSCI_RET_SUCCESS         =               0,
-    PSCI_RET_NOT_SUPPORTED   =               -1,
-    PSCI_RET_INVALID_PARAMS  =               -2,
-    PSCI_RET_DENIED          =               -3,
-    PSCI_RET_ALREADY_ON      =               -4,
-    PSCI_RET_ON_PENDING      =               -5,
-    PSCI_RET_INTERNAL_FAILURE =              -6,
-    PSCI_RET_NOT_PRESENT      =              -7,
-    PSCI_RET_DISABLED         =              -8,
-    PSCI_RET_INVALID_ADDRESS  =              -9,
+    PSCI_RET_SUCCESS = 0,
+    PSCI_RET_NOT_SUPPORTED = -1,
+    PSCI_RET_INVALID_PARAMS = -2,
+    PSCI_RET_DENIED = -3,
+    PSCI_RET_ALREADY_ON = -4,
+    PSCI_RET_ON_PENDING = -5,
+    PSCI_RET_INTERNAL_FAILURE = -6,
+    PSCI_RET_NOT_PRESENT = -7,
+    PSCI_RET_DISABLED = -8,
+    PSCI_RET_INVALID_ADDRESS = -9,
 }
