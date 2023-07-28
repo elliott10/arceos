@@ -26,16 +26,23 @@ qemu_args-aarch64 := \
 
 qemu_args-y := -m 128M -smp $(SMP) $(qemu_args-$(ARCH))
 
-qemu_args-$(FS) += \
+qemu_args-$(BLK) += \
   -device virtio-blk-$(vdev-suffix),drive=disk0 \
   -drive id=disk0,if=none,format=raw,file=$(DISK_IMG)
 
 qemu_args-$(NET) += \
-  -device virtio-net-$(vdev-suffix),netdev=net0 \
-  -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=udp::5555-:5555
+  -device virtio-net-$(vdev-suffix),netdev=net0
+
+ifeq ($(NET_DEV), user)
+  qemu_args-$(NET) += -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=udp::5555-:5555
+else ifeq ($(NET_DEV), tap)
+  qemu_args-$(NET) += -netdev tap,id=net0,ifname=tap0,script=no,downscript=no
+else
+  $(error "NET_DEV" must be one of "user" or "tap")
+endif
 
 ifeq ($(NET_DUMP), y)
-  qemu_args-$(NET) += -object filter-dump,id=dump0,netdev=net0,file=qemu-net0.pcap
+  qemu_args-$(NET) += -object filter-dump,id=dump0,netdev=net0,file=netdump.pcap
 endif
 
 qemu_args-$(GRAPHIC) += \
@@ -60,11 +67,11 @@ else
 endif
 
 define run_qemu
-  @printf "    $(CYAN_C)Running$(END_C) $(QEMU) $(qemu_args-y) $(1)\n"
-  @$(QEMU) $(qemu_args-y)
+  @printf "    $(CYAN_C)Running$(END_C) on qemu...\n"
+  $(call run_cmd,$(QEMU),$(qemu_args-y))
 endef
 
 define run_qemu_debug
-  @printf "    $(CYAN_C)Running$(END_C) $(QEMU) $(qemu_args-debug) $(1)\n"
-  @$(QEMU) $(qemu_args-debug)
+  @printf "    $(CYAN_C)Debugging$(END_C) on qemu...\n"
+  $(call run_cmd,$(QEMU),$(qemu_args-debug))
 endef

@@ -7,7 +7,7 @@ pub mod psci;
 pub mod gic;
 
 #[cfg(any(
-    feature = "platform-qemu-virt-aarch64",
-    feature = "platform-raspi4-aarch64"
+    platform_family = "aarch64-qemu-virt",
+    platform_family = "aarch64-raspi4"
 ))]
 pub mod pl011;

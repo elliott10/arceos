@@ -92,7 +92,7 @@ export PATH=`pwd`/x86_64-linux-musl-cross/bin:`pwd`/aarch64-linux-musl-cross/bin
 
 ```bash
 # in arceos directory
-make A=path/to/app ARCH=<arch> LOG=<log> NET=[y|n] FS=[y|n]
+make A=path/to/app ARCH=<arch> LOG=<log> NET=[y|n] BLK=[y|n]
 ```
 
 Where `<arch>` should be one of `riscv64`, `aarch64`，`x86_64`.
@@ -114,14 +114,14 @@ make A=apps/net/httpserver ARCH=aarch64 LOG=info NET=y SMP=4 run
 #### Rust
 
 1. Create a new rust package with `no_std` and `no_main` environment.
-2. Add `libax` dependency and features to enable to `Cargo.toml`:
+2. Add `axstd` dependency and features to enable to `Cargo.toml`:
 
     ```toml
     [dependencies]
-    libax = { path = "/path/to/arceos/ulib/libax", features = ["..."] }
+    axstd = { path = "/path/to/arceos/ulib/axstd", features = ["..."] }
     ```
 
-3. Call library functions from `libax` in your code, like the [helloworld](apps/helloworld/) example.
+3. Call library functions from `axstd` in your code, just like the Rust [std](https://doc.rust-lang.org/std/) library.
 4. Build your application with ArceOS, by running the `make` command in the application directory:
 
     ```bash
@@ -153,7 +153,6 @@ make A=apps/net/httpserver ARCH=aarch64 LOG=info NET=y SMP=4 run
 
     ```bash
     # in features.txt
-    default
     alloc
     paging
     net
