@@ -17,7 +17,12 @@ pub mod time {
 }
 
 pub mod misc {
-    pub use crate::platform::aarch64_common::psci::system_off as terminate;
+    pub fn terminate() -> ! {
+        info!("Shutting down...");
+        loop {
+            crate::arch::halt();
+        }
+    }
 }
 
 extern "C" {
