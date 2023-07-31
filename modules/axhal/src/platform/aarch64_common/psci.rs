@@ -89,7 +89,7 @@ pub fn psci_cpu_on(cpuid: usize, entry_point: usize, arg: usize) -> i32 {
     err
 }
 
-pub fn psci_cpu_off(cpuid: usize, entry_point: usize) {
+pub fn psci_cpu_off(_cpuid: usize) {
     const PSCI_POWER_STATE_TYPE_STANDBY: u32 = 0;
     const PSCI_POWER_STATE_TYPE_POWER_DOWN: u32 = 1;
     const PSCI_0_2_POWER_STATE_TYPE_SHIFT: u32 = 16;
@@ -138,6 +138,7 @@ pub fn psci_errno_tran(errno: i32) -> i32 {
 }
 
 /// PSCI return values, inclusive of all PSCI versions
+#[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub enum PsciRetNo {
     PSCI_RET_SUCCESS = 0,

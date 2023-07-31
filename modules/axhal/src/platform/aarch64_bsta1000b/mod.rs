@@ -1,7 +1,7 @@
 mod dw_apb_uart;
 
 pub mod mem;
-pub mod utils;
+pub mod misc;
 
 #[cfg(feature = "smp")]
 pub mod mp;
@@ -17,10 +17,6 @@ pub mod console {
 
 pub mod time {
     pub use crate::platform::aarch64_common::generic_timer::*;
-}
-
-pub mod misc {
-    pub use crate::platform::aarch64_common::psci::system_off as terminate;
 }
 
 extern "C" {

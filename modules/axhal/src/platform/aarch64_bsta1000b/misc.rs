@@ -1,17 +1,8 @@
+pub use crate::platform::aarch64_common::psci::system_off as terminate;
+
 use crate::mem::phys_to_virt;
 use crate::time::{busy_wait, Duration};
 use core::ptr::{read_volatile, write_volatile};
-
-/// 微秒(us) 延时器
-pub fn usdelay(us: u64) {
-    let d = Duration::from_micros(us);
-    busy_wait(d);
-}
-
-/// 毫秒(ms) 延时器
-pub fn msdelay(ms: u64) {
-    usdelay(ms * 1000);
-}
 
 /// Do QSPI reset
 pub fn reset_qspi() {
@@ -23,10 +14,10 @@ pub fn reset_qspi() {
         let value = read_volatile(ptr);
         trace!("SAFETY CRM RESET CTRL = {:#x}", value);
         write_volatile(ptr, value & !(0b11 << 15));
-        msdelay(100);
+        busy_wait(Duration::from_millis(100));
 
         write_volatile(ptr, value | (0b11 << 15));
-        msdelay(100);
+        busy_wait(Duration::from_millis(100));
     }
 }
 
@@ -49,7 +40,7 @@ pub fn do_reset() {
     axlog::ax_println!("resetting ...\n");
 
     // wait 50 ms
-    msdelay(50);
+    busy_wait(Duration::from_millis(50));
 
     // disable_interrupts();
 
