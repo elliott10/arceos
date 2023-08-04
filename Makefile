@@ -144,6 +144,7 @@ include scripts/make/test.mk
 ifeq ($(PLATFORM_NAME), aarch64-raspi4)
   include scripts/make/raspi4.mk
 endif
+include scripts/make/fu740.mk
 
 build: $(OUT_DIR) $(OUT_BIN)
 
