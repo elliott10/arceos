@@ -28,8 +28,6 @@ ifeq ($(BSP),rpi4)
     RUSTC_MISC_ARGS   = -C target-cpu=cortex-a72
 endif
 
-export RUSTFLAGS
-
 EXEC_MINIPUSH      = ruby tools/raspi4/common/serial/minipush.rb
 
 ##------------------------------------------------------------------------------

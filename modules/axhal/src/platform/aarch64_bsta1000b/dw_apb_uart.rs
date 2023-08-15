@@ -26,30 +26,19 @@ pub fn getchar() -> Option<u8> {
     UART.lock().getchar()
 }
 
-/// Memory Barrier
-fn dmb() {
-    unsafe {
-        core::arch::asm!("dmb sy");
-    }
-}
-
 /// UART simply initialize
 pub fn init_early() {
     UART.lock().init();
-    dmb();
 }
 
 /// Set UART IRQ Enable
+#[cfg(feature = "irq")]
 pub fn init_irq() {
     UART.lock().set_ier(true);
-    dmb();
 
-    #[cfg(feature = "irq")]
-    {
-        use crate::platform::aarch64_common::gic::{gic_irq_tran, IntIdType};
-        // IRQ Type: SPI
-        crate::irq::register_handler(gic_irq_tran(axconfig::UART_IRQ_NUM, IntIdType::SPI), handle);
-    }
+    use crate::platform::aarch64_common::gic::{gic_irq_tran, IntIdType};
+    // IRQ Type: SPI
+    crate::irq::register_handler(gic_irq_tran(axconfig::UART_IRQ_NUM, IntIdType::SPI), handle);
 }
 
 /// UART IRQ Handler

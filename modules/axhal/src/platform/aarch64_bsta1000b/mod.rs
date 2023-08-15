@@ -49,6 +49,7 @@ pub fn platform_init() {
     #[cfg(feature = "irq")]
     super::aarch64_common::gic::init_primary();
     super::aarch64_common::generic_timer::init_percpu();
+    #[cfg(feature = "irq")]
     dw_apb_uart::init_irq();
 }
 

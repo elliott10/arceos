@@ -65,7 +65,6 @@ pub fn register_handler(irq_num: usize, handler: IrqHandler) -> bool {
 /// necessary, it also acknowledges the interrupt controller after handling.
 pub fn dispatch_irq(_unused: usize) {
     GICC.handle_irq(|irq_num| {
-        trace!("GICC handle irq {}", irq_num);
         crate::irq::dispatch_irq_common(irq_num as _);
     });
 }

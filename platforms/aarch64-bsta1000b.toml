@@ -44,15 +44,11 @@ gicd-paddr = "0x32001000"
 # GICC Address
 gicc-paddr = "0x32002000"
 
-# CPU HWID from cpu device tree nodes with "reg" property
-# CPU_HWID = ["0x00", "0x100", "0x200", "0x300", "0x400", "0x500", "0x600", "0x700"]
-
 # BST A1000B board registers
 CPU_CSR_BASE = "0x32011000"
 A1000BASE_TOPCRM = "0x33002000"
 A1000BASE_SAFETYCRM = "0x70035000"
 A1000BASE_AONCFG = "0x70038000"
 
-PSCI_CPU_ON = "0xc4000003"
-PSCI_CPU_OFF = "0x84000002"
-PSCI_CPU_SUSPEND = "0xc4000001"
+# PSCI
+psci-method = "smc"
