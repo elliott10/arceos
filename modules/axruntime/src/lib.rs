@@ -138,10 +138,7 @@ pub extern "C" fn rust_main(cpu_id: usize, dtb: usize) -> ! {
     }
 
     #[cfg(feature = "alloc")]
-    {
-        info!("Initialize global memory allocator...");
-        init_allocator();
-    }
+    init_allocator();
 
     #[cfg(feature = "paging")]
     {
@@ -179,6 +176,12 @@ pub extern "C" fn rust_main(cpu_id: usize, dtb: usize) -> ! {
         init_interrupt();
     }
 
+    #[cfg(all(feature = "tls", not(feature = "multitask")))]
+    {
+        info!("Initialize thread local storage...");
+        init_tls();
+    }
+
     info!("Primary CPU {} init OK.", cpu_id);
     INITED_CPUS.fetch_add(1, Ordering::Relaxed);
 
@@ -200,6 +203,9 @@ pub extern "C" fn rust_main(cpu_id: usize, dtb: usize) -> ! {
 #[cfg(feature = "alloc")]
 fn init_allocator() {
     use axhal::mem::{memory_regions, phys_to_virt, MemRegionFlags};
+
+    info!("Initialize global memory allocator...");
+    info!("  use {} allocator.", axalloc::global_allocator().name());
 
     let mut max_region_size = 0;
     let mut max_region_paddr = 0.into();
@@ -279,4 +285,11 @@ fn init_interrupt() {
 
     // Enable IRQs before starting app
     axhal::arch::enable_irqs();
+}
+
+#[cfg(all(feature = "tls", not(feature = "multitask")))]
+fn init_tls() {
+    let main_tls = axhal::tls::TlsArea::alloc();
+    unsafe { axhal::arch::write_thread_pointer(main_tls.tls_ptr() as usize) };
+    core::mem::forget(main_tls);
 }

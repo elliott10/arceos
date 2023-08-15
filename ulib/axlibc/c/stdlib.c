@@ -9,8 +9,8 @@
 
 #include <axlibc.h>
 
-char *program_invocation_short_name = NULL;
-char *program_invocation_name = NULL;
+char *program_invocation_short_name = "dummy";
+char *program_invocation_name = "dummy";
 
 #define __DECONST(type, var) ((type)(uintptr_t)(const void *)(var))
 
@@ -404,11 +404,20 @@ long double strtold(const char *restrict s, char **restrict p)
 
 #endif // AX_CONFIG_FP_SIMD
 
+typedef int (*cmpfun)(const void *, const void *);
+
 // TODO
-void qsort(void *, size_t, size_t, int (*)(const void *, const void *))
+void qsort(void *base, size_t nel, size_t width, cmpfun cmp)
 {
     unimplemented();
     return;
+}
+
+// TODO
+int mkstemp(char *__template)
+{
+    unimplemented();
+    return 0;
 }
 
 // TODO
@@ -419,7 +428,7 @@ int mkostemp(char *__template, int __flags)
 }
 
 // TODO
-int system(const char *)
+int system(const char *cmd)
 {
     unimplemented();
     return 0;

@@ -1,6 +1,7 @@
 #ifndef __UNISTD_H__
 #define __UNISTD_H__
 
+#include <features.h>
 #include <stddef.h>
 #include <sys/stat.h>
 
@@ -62,6 +63,7 @@ char *getcwd(char *, size_t);
 unsigned alarm(unsigned);
 unsigned sleep(unsigned);
 int pause(void);
+int usleep(unsigned);
 
 pid_t fork(void);
 int execve(const char *, char *const[], char *const[]);

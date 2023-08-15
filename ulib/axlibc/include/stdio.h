@@ -28,9 +28,18 @@ extern FILE *const stderr;
 
 #define EOF (-1)
 
+#if defined(AX_LOG_WARN) || defined(AX_LOG_INFO) || defined(AX_LOG_DEBUG) || defined(AX_LOG_TRACE)
+
 #define unimplemented(fmt, ...)                                                                \
     printf("\x1b[33m%s%s:\x1b[0m " fmt "\n", "WARN: no ax_call implementation for ", __func__, \
            ##__VA_ARGS__)
+#else
+
+#define unimplemented(fmt, ...) \
+    do {                        \
+    } while (0)
+
+#endif
 
 #define SEEK_SET 0
 #define SEEK_CUR 1
@@ -51,7 +60,7 @@ FILE *freopen(const char *__restrict, const char *__restrict, FILE *__restrict);
 int fclose(FILE *);
 
 int remove(const char *);
-int rename(const char *__old, const char *__new);
+int rename(const char *, const char *);
 
 int feof(FILE *__stream);
 int ferror(FILE *);

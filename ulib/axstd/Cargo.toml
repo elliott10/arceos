@@ -20,63 +20,57 @@ documentation = "https://rcore-os.github.io/arceos/axstd/index.html"
 default = []
 
 # Multicore
-smp = ["axruntime/smp", "spinlock/smp"]
+smp = ["axfeat/smp", "spinlock/smp"]
 
 # Floating point/SIMD
-fp_simd = ["axhal/fp_simd"]
-
-# Memory
-alloc = ["dep:axalloc", "axruntime/alloc", "axio/alloc"]
-paging = ["axruntime/paging"]
+fp_simd = ["axfeat/fp_simd"]
 
 # Interrupts
-irq = ["axruntime/irq"]
+irq = ["arceos_api/irq", "axfeat/irq"]
 
-# Multi-task
-multitask = ["alloc", "axtask", "axruntime/multitask", "axsync/multitask"]
-sched_fifo = ["axtask/sched_fifo"]
-sched_rr = ["axtask/sched_rr", "irq"]
-sched_cfs = ["axtask/sched_cfs", "irq"]
+# Memory
+alloc = ["arceos_api/alloc", "axfeat/alloc", "axio/alloc"]
+alloc-tlsf = ["axfeat/alloc-tlsf"]
+alloc-slab = ["axfeat/alloc-slab"]
+alloc-buddy = ["axfeat/alloc-buddy"]
+paging = ["axfeat/paging"]
+tls = ["axfeat/tls"]
+
+# Multi-threading and scheduler
+multitask = ["arceos_api/multitask", "axfeat/multitask"]
+sched_fifo = ["axfeat/sched_fifo"]
+sched_rr = ["axfeat/sched_rr"]
+sched_cfs = ["axfeat/sched_cfs"]
 
 # File system
-fs = ["alloc", "axruntime/fs", "dep:axdriver", "dep:axfs"]
-myfs = ["axfs?/myfs"]
-use-ramdisk = ["axdriver?/ramdisk", "axfs?/use-ramdisk"]
+fs = ["arceos_api/fs", "axfeat/fs"]
+myfs = ["arceos_api/myfs", "axfeat/myfs"]
 
 # Networking
-net = ["alloc", "axruntime/net", "dep:axdriver", "dep:axnet"]
+net = ["arceos_api/net", "axfeat/net"]
 dns = []
 
 # Display
-display = ["axruntime/display", "dep:axdriver", "dep:axdisplay"]
+display = ["arceos_api/display", "axfeat/display"]
 
 # Device drivers
-bus-mmio = ["axdriver?/bus-mmio"]
-bus-pci = ["axdriver?/bus-pci"]
+bus-mmio = ["axfeat/bus-mmio"]
+bus-pci = ["axfeat/bus-pci"]
+driver-ramdisk = ["axfeat/driver-ramdisk"]
+driver-ixgbe = ["axfeat/driver-ixgbe"]
+driver-bcm2835-sdhci = ["axfeat/driver-bcm2835-sdhci"]
 
 # Logging
-log-level-off = ["axlog/log-level-off"]
-log-level-error = ["axlog/log-level-error"]
-log-level-warn = ["axlog/log-level-warn"]
-log-level-info = ["axlog/log-level-info"]
-log-level-debug = ["axlog/log-level-debug"]
-log-level-trace = ["axlog/log-level-trace"]
+log-level-off = ["axfeat/log-level-off"]
+log-level-error = ["axfeat/log-level-error"]
+log-level-warn = ["axfeat/log-level-warn"]
+log-level-info = ["axfeat/log-level-info"]
+log-level-debug = ["axfeat/log-level-debug"]
+log-level-trace = ["axfeat/log-level-trace"]
 
 [dependencies]
-# ArceOS modules
-axruntime = { path = "../../modules/axruntime" }
-axhal = { path = "../../modules/axhal" }
-axlog = { path = "../../modules/axlog" }
-axconfig = { path = "../../modules/axconfig" }
-axalloc = { path = "../../modules/axalloc", optional = true }
-axdriver = { path = "../../modules/axdriver", optional = true }
-axfs = { path = "../../modules/axfs", optional = true }
-axnet = { path = "../../modules/axnet", optional = true }
-axdisplay = { path = "../../modules/axdisplay", optional = true }
-axsync = { path = "../../modules/axsync", optional = true }
-axtask = { path = "../../modules/axtask", optional = true }
-
-# Other crates
+axfeat = { path = "../../api/axfeat" }
+arceos_api = { path = "../../api/arceos_api" }
 axio = { path = "../../crates/axio" }
 axerrno = { path = "../../crates/axerrno" }
 spinlock = { path = "../../crates/spinlock" }
