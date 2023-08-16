@@ -48,14 +48,8 @@ fn psci_hvc_call(func: usize, arg0: usize, arg1: usize, arg2: usize) -> usize {
 
 fn psci_call(fn_id: usize, arg0: usize, arg1: usize, arg2: usize) -> usize {
     match axconfig::PSCI_METHOD {
-        "smc" => {
-            info!("call smc");
-            arm_smccc_smc(fn_id, arg0, arg1, arg2)
-        }
-        "hvc" | _ => {
-            info!("call hvc");
-            psci_hvc_call(fn_id, arg0, arg1, arg2)
-        }
+        "smc" => arm_smccc_smc(fn_id, arg0, arg1, arg2),
+        "hvc" | _ => psci_hvc_call(fn_id, arg0, arg1, arg2),
     }
 }
 
@@ -158,7 +152,7 @@ pub fn psci_errno_tran(errno: i32) -> i32 {
             PsciRetNo::PSCI_RET_INVALID_PARAMS
         }
     };
-    info!("PSCI return: {:?}", errno_tran);
+    info!("return: {:?}", errno_tran);
     ret
 }
 
