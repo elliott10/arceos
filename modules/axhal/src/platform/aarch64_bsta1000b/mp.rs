@@ -16,7 +16,6 @@ pub fn start_secondary_cpu(cpu_id: usize, stack_top: PhysAddr) {
     }
     let entry = virt_to_phys(VirtAddr::from(_start_secondary as usize));
     crate::platform::aarch64_common::psci::psci_cpu_on(
-        true,
         CPU_HWID[cpu_id],
         entry.as_usize(),
         stack_top.as_usize(),

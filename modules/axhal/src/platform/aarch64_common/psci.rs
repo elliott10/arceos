@@ -69,14 +69,9 @@ pub fn system_off() -> ! {
 ///
 /// PSCI v0.1
 /// cpu entry_point: phys_addr(secondary_entry)
-pub fn psci_cpu_on(is_fn64: bool, cpuid: usize, entry_point: usize, arg: usize) -> i32 {
+pub fn psci_cpu_on(cpuid: usize, entry_point: usize, arg: usize) -> i32 {
     info!("Starting CPU {} ON ...", cpuid);
-    let fn_ids = if is_fn64 {
-        PSCI_0_2_FN64_CPU_ON
-    } else {
-        PSCI_0_2_FN_CPU_ON
-    };
-    let err = psci_0_1_cpu_on(fn_ids, cpuid, entry_point, arg);
+    let err = psci_0_1_cpu_on(PSCI_0_2_FN64_CPU_ON, cpuid, entry_point, arg);
     if err != 0 {
         error!("failed to boot CPU {} ({})", cpuid, err);
     } else {
