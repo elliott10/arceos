@@ -35,10 +35,7 @@ pub fn init_early() {
 #[cfg(feature = "irq")]
 pub fn init_irq() {
     UART.lock().set_ier(true);
-
-    use crate::platform::aarch64_common::gic::{gic_irq_tran, IntIdType};
-    // IRQ Type: SPI
-    crate::irq::register_handler(gic_irq_tran(axconfig::UART_IRQ_NUM, IntIdType::SPI), handle);
+    crate::irq::register_handler(crate::platform::irq::UART_IRQ_NUM, handle);
 }
 
 /// UART IRQ Handler

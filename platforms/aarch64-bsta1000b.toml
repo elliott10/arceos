@@ -38,7 +38,7 @@ virtio-mmio-regions = []
 # UART Address
 uart-paddr = "0x20008000"
 # UART irq from device tree
-uart-irq-num = "213"
+uart-irq = "0xd5"
 # GICD Address
 gicd-paddr = "0x32001000"
 # GICC Address
