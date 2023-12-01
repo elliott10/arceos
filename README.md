@@ -10,13 +10,6 @@ ArceOS was inspired a lot by [Unikraft](https://github.com/unikraft/unikraft).
 
 🚧 Working In Progress.
 
-## Contributing to arceos
-1. fork this repo's branch `dev` to your own repo
-2. add&update codes in your own repo's `dev` branch, pass CI test
-3. create PR to this repo's branch `dev`
-4. discuss with other contributors, merge PR to this repo's branch `dev`
-5. owners merge this repo's branch `dev` to `main`
-
 ## Features & TODOs
 
 * [x] Architecture: x86_64, riscv64, aarch64
@@ -92,7 +85,7 @@ export PATH=`pwd`/x86_64-linux-musl-cross/bin:`pwd`/aarch64-linux-musl-cross/bin
 
 ```bash
 # in arceos directory
-make A=path/to/app ARCH=<arch> LOG=<log> NET=[y|n] FS=[y|n]
+make A=path/to/app ARCH=<arch> LOG=<log>
 ```
 
 Where `<arch>` should be one of `riscv64`, `aarch64`，`x86_64`.
@@ -106,22 +99,24 @@ More arguments and targets can be found in [Makefile](Makefile).
 For example, to run the [httpserver](apps/net/httpserver/) on `qemu-system-aarch64` with 4 cores:
 
 ```bash
-make A=apps/net/httpserver ARCH=aarch64 LOG=info NET=y SMP=4 run
+make A=apps/net/httpserver ARCH=aarch64 LOG=info SMP=4 run NET=y
 ```
+
+Note that the `NET=y` argument is required to enable the network device in QEMU. These arguments (`BLK`, `GRAPHIC`, etc.) only take effect at runtime not build time.
 
 ### Your custom apps
 
 #### Rust
 
 1. Create a new rust package with `no_std` and `no_main` environment.
-2. Add `libax` dependency and features to enable to `Cargo.toml`:
+2. Add `axstd` dependency and features to enable to `Cargo.toml`:
 
     ```toml
     [dependencies]
-    libax = { path = "/path/to/arceos/ulib/libax", features = ["..."] }
+    axstd = { path = "/path/to/arceos/ulib/axstd", features = ["..."] }
     ```
 
-3. Call library functions from `libax` in your code, like the [helloworld](apps/helloworld/) example.
+3. Call library functions from `axstd` in your code, just like the Rust [std](https://doc.rust-lang.org/std/) library.
 4. Build your application with ArceOS, by running the `make` command in the application directory:
 
     ```bash
@@ -153,7 +148,6 @@ make A=apps/net/httpserver ARCH=aarch64 LOG=info NET=y SMP=4 run
 
     ```bash
     # in features.txt
-    default
     alloc
     paging
     net
@@ -166,6 +160,24 @@ make A=apps/net/httpserver ARCH=aarch64 LOG=info NET=y SMP=4 run
     make -C /path/to/arceos A=$(pwd) ARCH=<arch> run
     # more args: LOG=<log> SMP=<smp> NET=[y|n] ...
     ```
+
+### How to build ArceOS for specific platforms and devices
+
+Set the `PLATFORM` variable when run `make`:
+
+```bash
+# Build helloworld for raspi4
+make PLATFORM=aarch64-raspi4 A=apps/helloworld
+```
+
+You may also need to select the corrsponding device drivers by setting the `FEATURES` variable:
+
+```bash
+# Build the shell app for raspi4, and use the SD card driver
+make PLATFORM=aarch64-raspi4 A=apps/fs/shell FEATURES=driver-bcm2835-sdhci
+# Build Redis for the bare-metal x86_64 platform, and use the ixgbe and ramdisk driver
+make PLATFORM=x86_64-pc-oslab A=apps/c/redis FEATURES=driver-ixgbe,driver-ramdisk SMP=4
+```
 
 ## Design
 
