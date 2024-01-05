@@ -29,6 +29,7 @@
 #![feature(naked_functions)]
 #![feature(const_option)]
 #![feature(doc_auto_cfg)]
+#![feature(const_maybe_uninit_zeroed)]
 
 #[allow(unused_imports)]
 #[macro_use]

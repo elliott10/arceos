@@ -48,6 +48,7 @@ display = ["alloc", "paging", "axdriver/virtio-gpu", "dep:axdisplay", "axruntime
 # Device drivers
 bus-mmio = ["axdriver?/bus-mmio"]
 bus-pci = ["axdriver?/bus-pci"]
+# FEATURES=driver-ramdisk
 driver-ramdisk = ["axdriver?/ramdisk", "axfs?/use-ramdisk"]
 driver-ixgbe = ["axdriver?/ixgbe"]
 driver-bcm2835-sdhci = ["axdriver?/bcm2835-sdhci"]
