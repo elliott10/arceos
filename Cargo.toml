@@ -10,6 +10,7 @@ members = [
     "crates/axfs_devfs",
     "crates/axfs_ramfs",
     "crates/axfs_vfs",
+    "crates/lwext4_rust",
     "crates/axio",
     "crates/capability",
     "crates/crate_interface",

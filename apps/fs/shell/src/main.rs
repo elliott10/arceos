@@ -46,6 +46,9 @@ fn main() {
     let mut stdin = std::io::stdin();
     let mut stdout = std::io::stdout();
 
+    use axlibc::lseek;
+    print!("lseek at {:#x}\n", lseek as usize);
+
     let mut buf = [0; MAX_CMD_LEN];
     let mut cursor = 0;
     cmd::run_cmd("help".as_bytes());
