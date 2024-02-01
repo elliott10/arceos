@@ -4,7 +4,9 @@ use axerrno::AxError;
 use axfs_vfs::{VfsDirEntry, VfsError, VfsNodePerm, VfsResult};
 use axfs_vfs::{VfsNodeAttr, VfsNodeOps, VfsNodeRef, VfsNodeType, VfsOps};
 use axsync::Mutex;
-use lwext4_rust::bindings::{O_APPEND, O_CREAT, O_RDONLY, O_RDWR, O_TRUNC, O_WRONLY, SEEK_SET, SEEK_CUR, SEEK_END};
+use lwext4_rust::bindings::{
+    O_APPEND, O_CREAT, O_RDONLY, O_RDWR, O_TRUNC, O_WRONLY, SEEK_CUR, SEEK_END, SEEK_SET,
+};
 use lwext4_rust::{Ext4BlockWrapper, Ext4File, InodeTypes, KernelDevOp};
 
 use crate::dev::Disk;
@@ -63,7 +65,7 @@ unsafe impl Sync for FileWrapper {}
 
 impl FileWrapper {
     fn new(path: &str, types: InodeTypes) -> Self {
-        info!("New {:?} File: {}", types, path);
+        info!("FileWrapper new {:?} {}", types, path);
         //file.file_read_test("/test/test.txt", &mut buf);
 
         Self(Mutex::new(Ext4File::new(path, types)))
@@ -101,8 +103,7 @@ impl FileWrapper {
 impl VfsNodeOps for FileWrapper {
     fn get_attr(&self) -> VfsResult<VfsNodeAttr> {
         let mut file = self.0.lock();
-        let size = file.file_size();
-        let blocks = (size + (BLOCK_SIZE as u64 - 1)) / BLOCK_SIZE as u64;
+
         let perm = file.file_mode_get().unwrap_or(0o755);
         let perm = VfsNodePerm::from_bits_truncate((perm as u16) & 0o777);
 
@@ -120,6 +121,27 @@ impl VfsNodeOps for FileWrapper {
                 VfsNodeType::File
             }
         };
+
+        let size = if vtype == VfsNodeType::File {
+            let path = file.get_path();
+            let path = path.to_str().unwrap();
+            file.file_open(path, O_RDONLY)
+                .map_err(|e| <i32 as TryInto<AxError>>::try_into(e).unwrap())?;
+            let fsize = file.file_size();
+            file.file_close();
+            fsize
+        } else {
+            0 // DIR size ?
+        };
+        let blocks = (size + (BLOCK_SIZE as u64 - 1)) / BLOCK_SIZE as u64;
+
+        info!(
+            "get_attr of {:?} {:?}, size: {}, blocks: {}",
+            vtype,
+            file.get_path(),
+            size,
+            blocks
+        );
 
         Ok(VfsNodeAttr::new(perm, vtype, size, blocks))
     }
@@ -162,7 +184,7 @@ impl VfsNodeOps for FileWrapper {
     }
 
     fn remove(&self, path: &str) -> VfsResult {
-        debug!("remove ext4fs: {}", path);
+        info!("remove ext4fs: {}", path);
         let fpath = self.path_deal_with(path);
         let fpath = fpath.as_str();
 
@@ -235,7 +257,7 @@ impl VfsNodeOps for FileWrapper {
     /// Lookup the node with given `path` in the directory.
     /// Return the node if found.
     fn lookup(self: Arc<Self>, path: &str) -> VfsResult<VfsNodeRef> {
-        debug!("lookup ext4fs: {:?}, {}", self.0.lock().get_path(), path);
+        info!("lookup ext4fs: {:?}, {}", self.0.lock().get_path(), path);
 
         let fpath = self.path_deal_with(path);
         let fpath = fpath.as_str();
@@ -246,10 +268,10 @@ impl VfsNodeOps for FileWrapper {
         /////////
         let mut file = self.0.lock();
         if file.check_inode_exist(fpath, InodeTypes::EXT4_DE_DIR) {
-            info!("lookup let new dir");
+            debug!("lookup new DIR FileWrapper");
             Ok(Arc::new(Self::new(fpath, InodeTypes::EXT4_DE_DIR)))
         } else if file.check_inode_exist(fpath, InodeTypes::EXT4_DE_REG_FILE) {
-            info!("lookup let new file");
+            debug!("lookup new FILE FileWrapper");
             Ok(Arc::new(Self::new(fpath, InodeTypes::EXT4_DE_REG_FILE)))
         } else {
             Err(VfsError::NotFound)
@@ -261,9 +283,11 @@ impl VfsNodeOps for FileWrapper {
         let mut file = self.0.lock();
         let path = file.get_path();
         let path = path.to_str().unwrap();
-       file.file_open(path, O_RDONLY);
+        file.file_open(path, O_RDONLY)
+            .map_err(|e| <i32 as TryInto<AxError>>::try_into(e).unwrap())?;
 
-        file.file_seek(offset as i64, SEEK_SET);
+        file.file_seek(offset as i64, SEEK_SET)
+            .map_err(|e| <i32 as TryInto<AxError>>::try_into(e).unwrap())?;
         let r = file.file_read(buf);
 
         file.file_close();
@@ -275,9 +299,11 @@ impl VfsNodeOps for FileWrapper {
         let mut file = self.0.lock();
         let path = file.get_path();
         let path = path.to_str().unwrap();
-        file.file_open(path, O_RDWR);
+        file.file_open(path, O_RDWR)
+            .map_err(|e| <i32 as TryInto<AxError>>::try_into(e).unwrap())?;
 
-        file.file_seek(offset as i64, SEEK_SET);
+        file.file_seek(offset as i64, SEEK_SET)
+            .map_err(|e| <i32 as TryInto<AxError>>::try_into(e).unwrap())?;
         let r = file.file_write(buf);
 
         file.file_close();
@@ -365,11 +391,9 @@ impl KernelDevOp for Disk {
             whence
         );
         let new_pos = match whence as u32 {
-           SEEK_SET => Some(off),
-            SEEK_CUR => {
-                dev.position().checked_add_signed(off).map(|v| v as i64)
-            }
-          SEEK_END => size.checked_add_signed(off).map(|v| v as i64),
+            SEEK_SET => Some(off),
+            SEEK_CUR => dev.position().checked_add_signed(off).map(|v| v as i64),
+            SEEK_END => size.checked_add_signed(off).map(|v| v as i64),
             _ => {
                 error!("invalid seek() whence: {}", whence);
                 Some(off)
