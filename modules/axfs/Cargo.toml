@@ -19,7 +19,7 @@ ext4fs = ["dep:lwext4_rust"]
 myfs = ["dep:crate_interface"]
 use-ramdisk = []
 
-default = ["devfs", "ramfs", "ext4fs", "procfs", "sysfs"]
+default = ["devfs", "ramfs", "procfs", "sysfs", "ext4fs"]
 
 [dependencies]
 log = "0.4"

@@ -1,4 +1,4 @@
-use crate::alloc::string::{String, ToString};
+use crate::alloc::string::String;
 use alloc::sync::Arc;
 use axerrno::AxError;
 use axfs_vfs::{VfsDirEntry, VfsError, VfsNodePerm, VfsResult};
@@ -279,7 +279,7 @@ impl VfsNodeOps for FileWrapper {
     }
 
     fn read_at(&self, offset: u64, buf: &mut [u8]) -> VfsResult<usize> {
-        info!("read_at {}", offset);
+        info!("To read_at {}, buf len={}", offset, buf.len());
         let mut file = self.0.lock();
         let path = file.get_path();
         let path = path.to_str().unwrap();
@@ -295,7 +295,7 @@ impl VfsNodeOps for FileWrapper {
     }
 
     fn write_at(&self, offset: u64, buf: &[u8]) -> VfsResult<usize> {
-        info!("write_at {}", offset);
+        info!("To write_at {}, buf len={}", offset, buf.len());
         let mut file = self.0.lock();
         let path = file.get_path();
         let path = path.to_str().unwrap();
