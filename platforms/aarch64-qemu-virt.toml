@@ -81,7 +81,7 @@ psci-method = "hvc"
 # Testcase memory start address.
 testcase-memory-start = "0xd000_0000"
 # Testcase memory size.
-testcase-memory-size = "0x400_0000"
+testcase-memory-size = "0x800_0000"
 # The base address of the user heap.
 user-heap-base = "0x3FA0_0000"
 # The base address of the user stack. And the stack bottom is `user-stack-top + max-user-stack-size`.

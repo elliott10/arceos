@@ -10,7 +10,7 @@ use lwext4_rust::bindings::{
 use lwext4_rust::{Ext4BlockWrapper, Ext4File, InodeTypes, KernelDevOp};
 
 use crate::dev::Disk;
-const BLOCK_SIZE: usize = 512;
+pub const BLOCK_SIZE: usize = 512;
 
 #[allow(dead_code)]
 pub struct Ext4FileSystem {
@@ -95,6 +95,11 @@ impl FileWrapper {
 
 /// The [`VfsNodeOps`] trait provides operations on a file or a directory.
 impl VfsNodeOps for FileWrapper {
+    #[inline]
+    fn as_any(&self) -> &dyn core::any::Any {
+        self
+    }
+
     fn get_attr(&self) -> VfsResult<VfsNodeAttr> {
         let mut file = self.0.lock();
 
@@ -272,7 +277,7 @@ impl VfsNodeOps for FileWrapper {
     }
 
     fn read_at(&self, offset: u64, buf: &mut [u8]) -> VfsResult<usize> {
-        info!("To read_at {}, buf len={}", offset, buf.len());
+        debug!("To read_at {}, buf len={}", offset, buf.len());
         let mut file = self.0.lock();
         let path = file.get_path();
         let path = path.to_str().unwrap();
@@ -288,7 +293,7 @@ impl VfsNodeOps for FileWrapper {
     }
 
     fn write_at(&self, offset: u64, buf: &[u8]) -> VfsResult<usize> {
-        info!("To write_at {}, buf len={}", offset, buf.len());
+        debug!("To write_at {}, buf len={}", offset, buf.len());
         let mut file = self.0.lock();
         let path = file.get_path();
         let path = path.to_str().unwrap();

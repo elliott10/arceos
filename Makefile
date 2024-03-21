@@ -41,7 +41,7 @@ APP ?= $(A)
 FEATURES ?=
 APP_FEATURES ?=
 RUSTFLAGS ?=
-STRUCT ?= Unikernel
+STRUCT ?= Monolithic
 
 override FEATURES += fp_simd
 
@@ -157,10 +157,10 @@ else ifeq ($(PLATFORM_NAME), aarch64-bsta1000b)
   include scripts/make/bsta1000b-fada.mk
 endif
 
-make_bin: 
-  ifeq ($(STRUCT), Monolithic)
-		$(call make_bin)
-  endif
+make_bin:
+ifeq ($(STRUCT), Monolithic)
+#$(call make_bin)
+endif
 
 build: make_bin $(OUT_DIR) $(OUT_BIN)
 
