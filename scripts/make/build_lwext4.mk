@@ -23,6 +23,7 @@ LOCAL_CFLAGS += -DAX_LOG_DEBUG
 
 LOCAL_CFLAGS += -nostdinc -fno-builtin -ffreestanding -Wall
 LOCAL_CFLAGS += -I$(CURDIR)/$(local_inc_dir)
+LOCAL_CFLAGS += -fPIC
 # LOCAL_LDFLAGS += -nostdlib -static -no-pie --gc-sections -T$(LD_SCRIPT)
 
 ifeq ($(MODE), release)
