@@ -207,3 +207,5 @@ jobs:
           use-tool-cache: true
       - name: Bulld monolithic-userboot
         run: ./build_img.sh ${{ matrix.arch }} & make ARCH=${{ matrix.arch }} A=apps/monolithic_userboot
+      - name: Bulld monolithic-userboot with ext4
+        run: ./build_img.sh ${{ matrix.arch }} ext4 & make ARCH=${{ matrix.arch }} A=apps/monolithic_userboot FEATURES=ext4fs

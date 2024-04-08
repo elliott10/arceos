@@ -33,10 +33,6 @@ pub use axprocess::{yield_now_task, PID2PC};
 mod api;
 pub use api::*;
 
-#[cfg(feature = "ext4fs")]
-#[allow(unused_imports)]
-use axlibc::ax_open;
-
 /// Accept the result of a syscall, and return the isize to the user
 pub(crate) fn deal_result(result: SyscallResult) -> isize {
     match result {

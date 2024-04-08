@@ -44,7 +44,7 @@ bus-pci = ["axfeat/bus-pci"]
 fd = []
 fs = ["axruntime/fs", "arceos_api/fs", "fd"]
 fatfs = ["axfeat/fatfs"]
-ext4fs = ["axfeat/ext4fs", "dep:axlibc"]
+ext4fs = ["axfeat/ext4fs"]
 
 # Signal
 signal = ["axfeat/signal", "dep:axsignal"]
@@ -78,7 +78,6 @@ axtask = { path = "../../modules/axtask" }
 axnet = { path = "../../modules/axnet", optional = true }
 axprocess = { path = "../../modules/axprocess" }
 axsignal = { path = "../../modules/axsignal", optional = true }
-axlibc = { path = "../../ulib/axlibc", features = ["fp_simd", "alloc", "fs", "fd"], optional = true }
 axconfig = { path = "../../modules/axconfig" }
 axsync = { path = "../../modules/axsync", optional = true }
 axmem = { path = "../../modules/axmem" }
