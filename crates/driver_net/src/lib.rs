@@ -5,11 +5,11 @@
 #![feature(const_slice_from_raw_parts_mut)]
 #![feature(box_into_inner)]
 
+#[cfg(feature = "e1000")]
+pub mod e1000;
 #[cfg(feature = "ixgbe")]
 /// ixgbe NIC device driver.
 pub mod ixgbe;
-#[cfg(feature = "e1000")]
-pub mod e1000;
 mod net_buf;
 
 use core::ptr::NonNull;

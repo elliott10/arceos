@@ -153,7 +153,7 @@ cfg_if::cfg_if! {
                 let paddr = virt_to_phys((vaddr).into());
                 (vaddr, paddr.as_usize())
             }
-        
+
             /// Deallocate DMA memory by virtual address
             fn dma_free_coherent(&mut self, vaddr: usize, pages: usize) {
                 let layout = Layout::from_size_align(pages, 8).unwrap();
