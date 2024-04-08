@@ -54,7 +54,7 @@ futex = ["axfeat/futex"]
 
 # Network
 ip = ["axnet/ip"]
-net = ["ip", "arceos_api/net", "axfeat/net", "dep:axsync"]
+net = ["dep:axnet", "arceos_api/net", "axfeat/net", "dep:axsync"]
 ixgbe_net = ["net", "axfeat/driver-ixgbe"]
 e1000_net = ["net", "axfeat/driver-e1000"]
 

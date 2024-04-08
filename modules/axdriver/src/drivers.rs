@@ -187,7 +187,7 @@ cfg_if::cfg_if! {
                                 // panic!("arrived");
                                 let nic = E1000Nic::<KernelFuncObj>::init(
                                     kfn,
-                                    address as usize
+                                    phys_to_virt((address as usize).into()).into()
                                 )
                                 .expect("failed to initialize e1000 device");
                                 return Some(AxDeviceEnum::from_net(nic));
