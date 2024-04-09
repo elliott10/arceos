@@ -50,6 +50,8 @@ endif
 
 override FEATURES := $(strip $(FEATURES))
 
+$(info feat=$(FEATURES))
+
 ax_feat :=
 lib_feat :=
 

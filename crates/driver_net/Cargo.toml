@@ -10,7 +10,7 @@ repository = "https://github.com/rcore-os/arceos/tree/main/crates/driver_net"
 documentation = "https://rcore-os.github.io/arceos/driver_net/index.html"
 
 [features]
-default = ["ixgbe"]
+default = []
 ixgbe = ["dep:ixgbe-driver"]
 e1000 = ["dep:e1000-driver"]
 

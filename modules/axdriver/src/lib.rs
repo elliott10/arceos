@@ -171,7 +171,7 @@ pub fn init_drivers() -> AllDevices {
         debug!("number of NICs: {}", all_devs.net.len());
         for (i, dev) in all_devs.net.iter().enumerate() {
             assert_eq!(dev.device_type(), DeviceType::Net);
-            debug!("  NIC {}: {:?}", i, dev.device_name());
+            info!("  NIC {}: {:?}", i, dev.device_name());
         }
     }
     #[cfg(feature = "block")]

@@ -27,7 +27,7 @@ virtio-gpu = ["display", "virtio", "driver_virtio/gpu"]
 ramdisk = ["block", "driver_block/ramdisk"]
 bcm2835-sdhci = ["block", "driver_block/bcm2835-sdhci"]
 ixgbe = ["net", "driver_net/ixgbe", "dep:axalloc", "dep:axhal"]
-e1000 = ["net", "driver_net/e1000"]
+e1000 = ["net", "driver_net/e1000", "dep:axalloc", "dep:axhal"]
 
 img = ["ramdisk", "dep:axconfig"]
 

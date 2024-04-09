@@ -144,20 +144,20 @@ cfg_if::cfg_if! {
             /// Return (cpu virtual address, dma physical address) which is page aligned.
             //fn dma_alloc_coherent(pages: usize) -> usize;
             fn dma_alloc_coherent(&mut self, pages: usize) -> (usize, usize) {
-                let layout = Layout::from_size_align(pages, 8).unwrap();
-                let vaddr = if let Ok(vaddr) = global_allocator().alloc(layout) {
-                    vaddr.as_ptr() as usize
+            let vaddr = if let Ok(start_vaddr) = global_allocator().alloc_pages(pages, Self::PAGE_SIZE) {
+                        start_vaddr
                 } else {
+                    error!("failed to alloc pages");
                     return (0, 0);
                 };
                 let paddr = virt_to_phys((vaddr).into());
+                info!("dma_alloc_coherent pages @ vaddr={:#x}, paddr={:#x}", vaddr, paddr);
                 (vaddr, paddr.as_usize())
             }
 
             /// Deallocate DMA memory by virtual address
             fn dma_free_coherent(&mut self, vaddr: usize, pages: usize) {
-                let layout = Layout::from_size_align(pages, 8).unwrap();
-                global_allocator().dealloc(NonNull::new(vaddr as *mut u8).unwrap(), layout);
+                global_allocator().dealloc_pages(vaddr, pages);
             }
         }
 
@@ -173,6 +173,8 @@ cfg_if::cfg_if! {
                 ) -> Option<crate::AxDeviceEnum> {
                     const E1000_VENDOR_ID: u16 = 0x8086;
                     const E1000_DEVICE_ID: u16 = 0x100e;
+
+                    info!("PCI vendor:device = {:#x}:{:#x}", dev_info.vendor_id, dev_info.device_id);
                     if dev_info.vendor_id == E1000_VENDOR_ID && dev_info.device_id == E1000_DEVICE_ID {
                         info!("E1000 PCI device found at {:?}", bdf);
 

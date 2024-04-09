@@ -52,6 +52,7 @@ myfs = ["axfs?/myfs"]
 
 # Networking
 net = ["alloc", "paging", "axdriver/virtio-net", "dep:axnet", "axruntime/net"]
+# net = ["alloc", "paging", "axdriver/e1000", "dep:axnet", "axruntime/net"]
 
 # Display
 display = ["alloc", "paging", "axdriver/virtio-gpu", "dep:axdisplay", "axruntime/display"]
