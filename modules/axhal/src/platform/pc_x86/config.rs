@@ -93,10 +93,12 @@ struct HvConsole {
 ///
 /// @note Keep Config._HEADER_FORMAT in jailhouse-cell-linux in sync with this
 /// structure.
+/// Sync with jailhouse/include/jailhouse/cell-config.h::jailhouse_cell_desc
 #[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 pub struct HvCellDesc {
-    signature: [u8; 6],
+    signature: [u8; 5],
+    architecture: u8,
     revision: u16,
 
     name: [u8; HV_CELL_NAME_MAXLEN + 1],
@@ -107,9 +109,10 @@ pub struct HvCellDesc {
     pub num_memory_regions: u32,
     pub num_cache_regions: u32,
     pub num_irqchips: u32,
-    pub pio_bitmap_size: u32,
+    pub num_pio_regions: u32,
     pub num_pci_devices: u32,
     pub num_pci_caps: u32,
+    pub num_stream_ids: u32,
 
     vpci_irq_base: u32,
 
@@ -149,6 +152,13 @@ pub struct HvIrqChip {
 
 #[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
+pub struct HvPio {
+    base: u16,
+    length: u16,
+}
+
+#[derive(Debug, Copy, Clone)]
+#[repr(C, packed)]
 pub struct HvPciDevice {
     pci_device_type: u8,
     iommu: u8,
@@ -159,14 +169,18 @@ pub struct HvPciDevice {
     num_caps: u16,
     num_msi_vectors: u8,
     msi_64bits: u8,
+    msi_maskable: u8,
     num_msix_vectors: u16,
     msix_region_size: u16,
     msix_address: u64,
-    /// Memory region index of virtual shared memory device.
-    shmem_region: u32,
-    /// PCI subclass and interface ID of virtual shared memory device.
+    /// First memory region index of shared memory device.
+    shmem_regions_start: u32,
+    /// ID of shared memory device (0..shmem_peers-1).
+    shmem_dev_id: u8,
+    /// Maximum number of peers connected via this shared memory device.
+    shmem_peers: u8,
+    /// PCI subclass and interface ID of shared memory device.
     shmem_protocol: u16,
-    _padding: [u8; 2],
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -181,12 +195,26 @@ pub struct HvPciCapability {
 #[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 struct HvIommu {
+    iommu_type: u32,
     base: u64,
     size: u32,
-    amd_bdf: u16,
-    amd_base_cap: u8,
-    amd_msi_cap: u8,
-    amd_features: u32,
+    iommu_union: IommuTipvu, // union of IommuAmd and IommuTipvu
+}
+
+#[derive(Debug, Copy, Clone)]
+#[repr(C, packed)]
+struct IommuAmd {
+    bdf: u16,
+    base_cap: u8,
+    msi_cap: u8,
+    features: u32,
+}
+
+#[derive(Debug, Copy, Clone)]
+#[repr(C, packed)]
+struct IommuTipvu {
+    tlb_base: u64,
+    tlb_size: u32,
 }
 
 #[cfg(target_arch = "x86_64")]
@@ -194,12 +222,24 @@ struct HvIommu {
 #[repr(C, packed)]
 struct ArchPlatformInfo {
     pm_timer_address: u16,
-    vtd_interrupt_limit: u32,
     apic_mode: u8,
-    _padding: [u8; 3],
+    padding: u8,
+    vtd_interrupt_limit: u32,
     tsc_khz: u32,
     apic_khz: u32,
-    iommu_units: [HvIommu; HV_MAX_IOMMU_UNITS],
+}
+
+#[derive(Debug, Copy, Clone)]
+#[repr(C, packed)]
+struct ArmPlatformInfo {
+    maintenance_irq: u8,
+    gic_version: u8,
+    padding: [u8; 2],
+    gicd_base: u64,
+    gicc_base: u64,
+    gich_base: u64,
+    gicv_base: u64,
+    gicr_base: u64,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -209,14 +249,16 @@ struct PlatformInfo {
     pci_mmconfig_end_bus: u8,
     pci_is_virtual: u8,
     pci_domain: u16,
-    arch: ArchPlatformInfo,
+    iommu_units: [HvIommu; HV_MAX_IOMMU_UNITS],
+    arch: ArmPlatformInfo, // union of ArchPlatformInfo and ArmPlatformInfo
 }
 
 /// General descriptor of the system.
 #[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 pub struct HvSystemConfig {
-    pub signature: [u8; 6],
+    pub signature: [u8; 5],
+    pub architecture: u8,
     pub revision: u16,
     flags: u32,
 
@@ -242,9 +284,10 @@ impl HvCellDesc {
             + self.num_memory_regions as usize * size_of::<HvMemoryRegion>()
             + self.num_cache_regions as usize * size_of::<HvCacheRegion>()
             + self.num_irqchips as usize * size_of::<HvIrqChip>()
-            + self.pio_bitmap_size as usize
+            + self.num_pio_regions as usize * size_of::<HvPio>()
             + self.num_pci_devices as usize * size_of::<HvPciDevice>()
             + self.num_pci_caps as usize * size_of::<HvPciCapability>()
+            + self.num_stream_ids as usize * size_of::<u32>()
     }
 }
 
