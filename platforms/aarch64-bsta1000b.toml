@@ -6,24 +6,24 @@ platform = "aarch64-bsta1000b"
 family = "aarch64-bsta1000b"
 
 # Base address of the whole physical memory.
-phys-memory-base = "0x80000000"
-# Size of the whole physical memory.
-phys-memory-size = "0x70000000"
+#phys-memory-base = "0x0020_0000"
+phys-memory-base = "0x0040_0000"
+# 2G Size of the whole physical memory.
+phys-memory-size = "0x4000_0000"
 # Base physical address of the kernel image.
-kernel-base-paddr = "0x81000000"
+kernel-base-paddr = "0x0048_0000"
 # Base virtual address of the kernel image.
-kernel-base-vaddr = "0xffff_0000_8100_0000"
+kernel-base-vaddr = "0xffff_0000_0048_0000"
 # Linear mapping offset, for quick conversions between physical and virtual
 # addresses.
 phys-virt-offset = "0xffff_0000_0000_0000"
 # MMIO regions with format (`base_paddr`, `size`).
 mmio-regions = [
-    ["0x20008000", "0x1000"], # uart8250 UART0
-    ["0x32000000", "0x8000"], # arm,gic-400
-    ["0x32011000", "0x1000"], # CPU CSR
-    ["0x33002000", "0x1000"], # Top CRM
-    ["0x70035000", "0x1000"], # CRM reg
-    ["0x70038000", "0x1000"], # aon pinmux
+    ["0xfeb50000", "0x1000"], # uart8250
+    ["0xfe600000", "0x10000"], # arm,gic-v3
+    ["0xfe680000", "0x100000"], # arm,gic-v3
+    ["0xfe180000", "0x10000"], # rockchip,rk3588-pcie
+    ["0xfe190000", "0x10000"], # rockchip,rk3588-pcie
 ]
 
 virtio-mmio-regions = []
@@ -36,19 +36,13 @@ virtio-mmio-regions = []
 # pci-ranges = []
 
 # UART Address
-uart-paddr = "0x20008000"
+uart-paddr = "0xfeb50000"
 # UART irq from device tree
-uart-irq = "0xd5"
+uart-irq = "0x14d"
 # GICD Address
-gicd-paddr = "0x32001000"
+gicd-paddr = "0xfe600000"
 # GICC Address
-gicc-paddr = "0x32002000"
-
-# BST A1000B board registers
-CPU_CSR_BASE = "0x32011000"
-A1000BASE_TOPCRM = "0x33002000"
-A1000BASE_SAFETYCRM = "0x70035000"
-A1000BASE_AONCFG = "0x70038000"
+gicc-paddr = "0xfe680000"
 
 # PSCI
-psci-method = "smc"
+psci-method = "smc" # arm,psci-1.0

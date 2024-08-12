@@ -112,29 +112,35 @@ impl MemAttr {
 }
 
 impl From<DescriptorAttr> for MappingFlags {
-    fn from(attr: DescriptorAttr) -> Self {
-        let mut flags = Self::empty();
-        if attr.contains(DescriptorAttr::VALID) {
-            flags |= Self::READ;
-        }
-        if !attr.contains(DescriptorAttr::AP_RO) {
-            flags |= Self::WRITE;
-        }
-        if attr.contains(DescriptorAttr::AP_EL0) {
-            flags |= Self::USER;
-            if !attr.contains(DescriptorAttr::UXN) {
-                flags |= Self::EXECUTE;
-            }
-        } else if !attr.intersects(DescriptorAttr::PXN) {
-            flags |= Self::EXECUTE;
-        }
-        match attr.mem_attr() {
-            Some(MemAttr::Device) => flags |= Self::DEVICE,
-            Some(MemAttr::NormalNonCacheable) => flags |= Self::UNCACHED,
-            _ => {}
-        }
-        flags
-    }
+	fn from(attr: DescriptorAttr) -> Self {
+	let mut flags = Self::empty();
+	if attr.contains(DescriptorAttr::VALID) {
+		flags |= Self::READ;
+
+		if !attr.contains(DescriptorAttr::AP_RO) {
+			flags |= Self::WRITE;
+		}
+
+	}
+
+	if attr.contains(DescriptorAttr::AP_EL0) {
+		flags |= Self::USER;
+		if !attr.contains(DescriptorAttr::UXN) {
+			flags |= Self::EXECUTE;
+		}
+	} else {
+		if !attr.intersects(DescriptorAttr::PXN) {
+			flags |= Self::EXECUTE;
+		}
+		match attr.mem_attr() {
+			Some(MemAttr::Device) => flags |= Self::DEVICE,
+			Some(MemAttr::NormalNonCacheable) => flags |= Self::UNCACHED,
+			_ => {}
+		}
+	}
+
+	flags
+	}
 }
 
 impl From<MappingFlags> for DescriptorAttr {
@@ -226,6 +232,12 @@ impl GenericPTE for A64PTE {
     fn clear(&mut self) {
         self.0 = 0
     }
+/*
+    fn get(&self) -> (u64, u64) {
+	    use aarch64_cpu::registers::Readable;
+	    (self.0, MAIR_EL1.get())
+    }
+*/
 }
 
 impl fmt::Debug for A64PTE {
