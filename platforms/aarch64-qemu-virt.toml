@@ -20,6 +20,7 @@ phys-virt-offset = "0xffff_0000_0000_0000"
 mmio-regions = [
     ["0x0900_0000", "0x1000"],      # PL011 UART
     ["0x0800_0000", "0x2_0000"],    # GICv2
+    ["0x080a_0000", "0xf6_0000"],    # GICv3
     ["0x0a00_0000", "0x4000"],      # VirtIO
     ["0x1000_0000", "0x2eff_0000"],     # PCI memory ranges (ranges 1: 32-bit MMIO space)
     ["0x40_1000_0000", "0x1000_0000"],  # PCI config space
@@ -74,8 +75,11 @@ uart-paddr = "0x0900_0000"
 uart-irq = "1"
 
 # GICC Address
-gicc-paddr = "0x0801_0000"
 gicd-paddr = "0x0800_0000"
+gicr-paddr = "0x080a_0000"
+gicc-paddr = "0x0801_0000"
+
+gic-version="3"
 
 # PSCI
 psci-method = "hvc"

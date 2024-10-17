@@ -37,15 +37,22 @@ pub fn init_early() {
 pub fn init() {
     #[cfg(feature = "irq")]
     crate::irq::set_enable(crate::platform::irq::UART_IRQ_NUM, true);
+
+    #[cfg(feature = "irq")]
+    super::gic::register_handler(crate::platform::irq::UART_IRQ_NUM, handle);
 }
 
 /// UART IRQ Handler
 pub fn handle() {
     let is_receive_interrupt = UART.lock().is_receive_interrupt();
     UART.lock().ack_interrupts();
+
+    debug!("UART IRQ Handler");
     if is_receive_interrupt {
+    /*
         while let Some(c) = getchar() {
             putchar(c);
         }
+        */
     }
 }
