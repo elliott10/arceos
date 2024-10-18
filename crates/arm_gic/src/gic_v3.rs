@@ -144,41 +144,6 @@ static GICR_LOCK: Mutex<()> = Mutex::new(());
 
 pub static INTERRUPT_EN_SET: Mutex<BTreeSet<usize>> = Mutex::new(BTreeSet::new());
 
-// Only used for Readable system register.
-macro_rules! sysreg_read {
-    ($definename:ident, $asmname:ident) => {
-        impl ReadableReg for $definename {
-            #[inline]
-            fn read() -> Self::Value {
-                //mrs!($asmname)
-                {
-                    let r;
-                    unsafe {
-                        // TODO: If use 'nomem' option, the system will staff may beacuse of no assign type here
-                        core::arch::asm!(concat!("mrs {0}, ", stringify!($reg)), out(reg) r, options(pure,readonly, nostack));
-                    }
-                    r
-                }
-        
-            }   
-        }
-    };  
-}
-
-// Only used for Writeable system register.
-macro_rules! sysreg_write {
-    ($definename:ident, $asmname:ident) => {
-        impl WriteableReg for $definename {
-            #[inline]
-            unsafe fn write(val: Self::Value) {
-                //msr!($asmname, val)
-                unsafe{core::arch::asm!(concat!("msr ", stringify!($reg), ", {0:x}"), in(reg) $val, options(nomem, nostack));}
-
-            }
-        }
-    };  
-}
-
 /// Read reg: MPIDR_EL1
 pub fn read_mpidr() -> u64 {
     let mut reg_r = 0;
@@ -211,16 +176,14 @@ pub fn add_en_interrupt(id: usize) {
     set.insert(id);
 }
 
-/*
 pub fn show_en_interrupt() {
     let set = INTERRUPT_EN_SET.lock();
-    info!("en irq set: ");
+    debug!("en irq set: ");
     for irq in set.iter() {
-        info!("{} ", irq);
+        debug!("{} ", irq);
     }
-    info!("\n");
+    debug!("\n");
 }
-*/
 
 pub fn gic_prio_reg(int_id: usize) -> usize {
     (int_id * GIC_PRIO_BITS) / 32
@@ -825,10 +788,14 @@ pub struct GicCpuInterface;
 
 impl core::fmt::Display for GicCpuInterface {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        #[cfg(feature = "hyper")]
         writeln!(f, "ICC_SRE_EL2:{:016x}", ICC_SRE_EL2::read())?;
+        #[cfg(not(feature = "hyper"))]
+        writeln!(f, "ICC_SRE_EL1:{:016x}", ICC_SRE_EL2::read())?;
         writeln!(f, "ICC_PMR_EL1:{:016x}", ICC_PMR_EL1::read())?;
         writeln!(f, "ICC_BPR1_EL1:{:016x}", ICC_BPR1_EL1::read())?;
         writeln!(f, "ICC_CTLR_EL1:{:016x}", ICC_CTLR_EL1::read())?;
+        #[cfg(feature = "hyper")]
         writeln!(f, "ICH_HCR_EL2:{:016x}", ICH_HCR_EL2::read())?;
         writeln!(f, "ICC_IGRPEN1_EL1:{:016x}", ICC_IGRPEN1_EL1::read())?;
         Ok(())
@@ -839,11 +806,16 @@ impl GicCpuInterface {
     fn init(&self) {
         // SAFETY: Set the SRE[0] bit to 1 to enable Group 1 interrupts.
         unsafe {
+        #[cfg(feature = "hyper")]
             ICC_SRE_EL2::write(0b1);
+        #[cfg(not(feature = "hyper"))]
+        // Enable [the system register interface] to the GIC CPU interface, instead of the memory-mapped interface
+        ICC_SRE_EL1::write(0b1);
         }
 
         isb();
 
+        #[cfg(feature = "hyper")]
         for i in 0..gich_lrs_num() {
             GICH.set_lr(i, 0);
         }
@@ -861,14 +833,18 @@ impl GicCpuInterface {
         unsafe {
             ICC_CTLR_EL1::write(ICC_CTLR_EOIMODE_BIT);
         }
+
+        // SAFETY: Set the EnableGrp1[0] to 1 to enable Group 1 interrupts.
+        unsafe {
+            ICC_IGRPEN1_EL1::write(GICC_IGRPEN_EL1_ENB_BIT);
+        }
+
+        #[cfg(feature = "hyper")]
+        {
         let hcr = ICH_HCR_EL2::read();
         // SAFETY: Change the LRENPIE[2] to 1 to enable List Register Entry Not Present Interrupt
         unsafe {
             ICH_HCR_EL2::write(hcr | GICH_HCR_LRENPIE_BIT);
-        }
-        // SAFETY: Set the EnableGrp1[0] to 1 to enable Group 1 interrupts.
-        unsafe {
-            ICC_IGRPEN1_EL1::write(GICC_IGRPEN_EL1_ENB_BIT);
         }
 
         //Set ICH_VMCR_EL2:Interrupt Controller Virtual Machine Control Register Enables the hypervisor to save and restore the virtual machine view of the GIC state.
@@ -881,6 +857,7 @@ impl GicCpuInterface {
         unsafe {
             ICH_VMCR_EL2::write(ich_vmcr);
         }
+    }
     }
 
     pub fn iar(&self) -> u32 {
@@ -901,6 +878,9 @@ impl GicCpuInterface {
         }
     }
 }
+
+cfg_if::cfg_if! {
+if #[cfg(feature = "hyper")] {
 
 pub struct GicHypervisorInterface;
 
@@ -1147,6 +1127,7 @@ impl GicState {
         }
     }
 }
+}} // cfg_if!
 
 // ? Todo
 #[linkage = "weak"]
@@ -1162,6 +1143,7 @@ pub static GICD: DeviceRef<GicDistributor> = DeviceRef::new(PLATFORM_GICD_BASE a
 pub static GICR: DeviceRef<GicRedistributor> = DeviceRef::new(PLATFORM_GICR_BASE as *const GicRedistributor);
 
 pub static GICC: GicCpuInterface = GicCpuInterface;
+#[cfg(feature = "hyper")]
 pub static GICH: GicHypervisorInterface = GicHypervisorInterface;
 
 #[derive(Debug, Default)]
@@ -1213,6 +1195,7 @@ impl<T> Deref for DeviceRef<'_, T> {
     }
 }
 
+#[cfg(feature = "hyper")]
 #[inline(always)]
 pub fn gich_lrs_num() -> usize {
     (ICH_VTR_EL2::read() & GICH_VTR_MSK) + 1
@@ -1228,7 +1211,10 @@ pub fn gic_max_spi() -> usize {
 pub fn gic_glb_init() {
     // Initialize gic glb
     info!("Init gic v3, GICD@{:#x}, GICR@{:#x}", PLATFORM_GICD_BASE, PLATFORM_GICR_BASE);
+
+    #[cfg(feature = "hyper")]
     set_gic_lrs(gich_lrs_num());
+
     GICD.global_init();
 }
 
@@ -1251,8 +1237,7 @@ pub fn gic_is_sgi(int_id: usize) -> bool {
     int_id < GIC_SGIS_NUM
 }
 
-pub fn gicc_clear_current_irq(for_hypervisor: bool) {
-    let irq = GICC.iar();
+pub fn gicc_clear_current_irq(irq: u32, for_hypervisor: bool) {
     if irq == 0 {
         return;
     }
@@ -1328,11 +1313,13 @@ pub fn gic_get_act(int_id: usize) -> bool {
 }
 
 pub fn gic_set_enable(int_id: usize, en: bool) {
+    debug!("To enable gic: {} int={}", en, int_id);
     if !gic_is_priv(int_id) {
         GICD.set_enable(int_id, en);
     } else {
         GICR.set_enable(int_id, en, get_cpu_id() as u32);
     }
+    show_en_interrupt();
 }
 
 pub fn gic_get_prio(int_id: usize) {

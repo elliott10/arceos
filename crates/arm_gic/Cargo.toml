@@ -13,4 +13,8 @@ documentation = "https://rcore-os.github.io/arceos/arm_gic/index.html"
 tock-registers = "0.8"
 spin = { version = "0.9.4", features = ["use_ticket_mutex"] }
 lazy_static = { version = "1.5.0", features = ["spin_no_std"] }
+cfg-if = "1.0"
 log = "0.4"
+
+[features]
+hyper = []

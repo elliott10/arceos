@@ -84,6 +84,7 @@ pub fn dispatch_irq(_unused: usize) {
 
     #[cfg(feature = "gicv3")]
     if let Some(id) = gicc_get_current_irq() {
+        trace!("Got irq: {}", id);
         if id >= 1022 {
             return;
         }
@@ -92,7 +93,7 @@ pub fn dispatch_irq(_unused: usize) {
         let handled_by_hypervisor = true;
         // let end = time_current_us();
 
-        gicc_clear_current_irq(handled_by_hypervisor);
+        gicc_clear_current_irq(id as u32, handled_by_hypervisor);
     }   
 }
 
