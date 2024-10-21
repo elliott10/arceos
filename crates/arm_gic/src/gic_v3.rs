@@ -1129,18 +1129,19 @@ impl GicState {
 }
 }} // cfg_if!
 
-// ? Todo
-#[linkage = "weak"]
-#[export_name = "PLATFORM_GICD_BASE"]
-pub static PLATFORM_GICD_BASE: usize = 0xffff000008000000;
+extern "C" {
+#[link_name = "PLATFORM_GICD_BASE"]
+pub static GICD_BASE: usize;
 
-#[linkage = "weak"]
-#[export_name = "PLATFORM_GICR_BASE"]
-pub static PLATFORM_GICR_BASE: usize = 0xffff0000080a0000;
+#[link_name = "PLATFORM_GICR_BASE"]
+pub static GICR_BASE: usize;
+}
 
+lazy_static::lazy_static! {
 // SAFETY: GICD & GICR are GICv3 mmio device regions
-pub static GICD: DeviceRef<GicDistributor> = DeviceRef::new(PLATFORM_GICD_BASE as *const GicDistributor);
-pub static GICR: DeviceRef<GicRedistributor> = DeviceRef::new(PLATFORM_GICR_BASE as *const GicRedistributor);
+pub static ref GICD: DeviceRef<'static, GicDistributor> = DeviceRef::new(unsafe{ GICD_BASE as *const GicDistributor });
+pub static ref GICR: DeviceRef<'static, GicRedistributor> = DeviceRef::new(unsafe { GICR_BASE as *const GicRedistributor });
+}
 
 pub static GICC: GicCpuInterface = GicCpuInterface;
 #[cfg(feature = "hyper")]
@@ -1157,8 +1158,8 @@ impl<T> DeviceRef<'_, T> {
     /// # Safety
     /// - `ptr` must be aligned, non-null, and dereferencable as `T`.
     /// - `*ptr` must be valid for the program duration.
-    pub const fn new<'a>(ptr: *const T) -> DeviceRef<'a, T> {
-        //info!("DeviceRef new @ {:#x}", ptr as usize);
+    pub fn new<'a>(ptr: *const T) -> DeviceRef<'a, T> {
+        info!("DeviceRef new @ {:#x}", ptr as usize);
         
         // SAFETY: `ptr` is non-null as promised by the caller.
         DeviceRef {
@@ -1209,8 +1210,7 @@ pub fn gic_max_spi() -> usize {
 }
 
 pub fn gic_glb_init() {
-    // Initialize gic glb
-    info!("Init gic v3, GICD@{:#x}, GICR@{:#x}", PLATFORM_GICD_BASE, PLATFORM_GICR_BASE);
+    info!("gic_glb_init gic v3, GICD@{:#x}, GICR@{:#x}", unsafe{ GICD_BASE }, unsafe{ GICR_BASE });
 
     #[cfg(feature = "hyper")]
     set_gic_lrs(gich_lrs_num());

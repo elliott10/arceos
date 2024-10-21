@@ -27,10 +27,10 @@ use arm_gic::gic_v3::{GICD, gicc_get_current_irq, gicc_clear_current_irq, gic_gl
 
 #[cfg(feature = "gicv3")]
 #[export_name = "PLATFORM_GICD_BASE"]
-pub static PLATFORM_GICD_BASE: usize = axconfig::PHYS_VIRT_OFFSET + axconfig::GICD_PADDR;
+pub static GICD_BASE: usize = axconfig::PHYS_VIRT_OFFSET + axconfig::GICD_PADDR;
 #[cfg(feature = "gicv3")]
 #[export_name = "PLATFORM_GICR_BASE"]
-pub static PLATFORM_GICR_BASE: usize = axconfig::PHYS_VIRT_OFFSET + axconfig::GICR_PADDR;
+pub static GICR_BASE: usize = axconfig::PHYS_VIRT_OFFSET + axconfig::GICR_PADDR;
 
 /// Enables or disables the given IRQ.
 pub fn set_enable(irq_num: usize, enabled: bool) {
