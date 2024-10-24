@@ -40,5 +40,5 @@ pub fn init_irq() {
 
 /// UART IRQ Handler
 pub fn handle() {
-    trace!("Uart IRQ Handler");
+    debug!("dw_apb_uart IRQ Handler");
 }

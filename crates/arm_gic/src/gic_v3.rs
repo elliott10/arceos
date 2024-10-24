@@ -157,10 +157,10 @@ pub fn read_mpidr() -> u64 {
 /// Converts MPIDR to CPU ID
 pub fn mpidr2cpuid(mpidr: u64) -> usize {
     // RK3588
-    //((mpidr >> 8) & 0xff) as usize
+    ((mpidr >> 8) & 0xff) as usize
 
     // Qemu
-    (mpidr & 0xffffff & 0xff) as usize
+    //(mpidr & 0xffffff & 0xff) as usize
 }
 
 pub fn get_cpu_id() -> usize {

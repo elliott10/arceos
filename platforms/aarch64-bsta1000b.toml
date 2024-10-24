@@ -20,7 +20,7 @@ phys-virt-offset = "0xffff_0000_0000_0000"
 # MMIO regions with format (`base_paddr`, `size`).
 mmio-regions = [
     ["0xfeb50000", "0x1000"], # uart8250
-    ["0xfe600000", "0x10000"], # arm,gic-v3
+    ["0xfe600000", "0x20000"], # arm,gic-v3
     ["0xfe680000", "0x100000"], # arm,gic-v3
     ["0xfe180000", "0x10000"], # rockchip,rk3588-pcie
     ["0xfe190000", "0x10000"], # rockchip,rk3588-pcie
@@ -42,7 +42,9 @@ uart-irq = "0x14d"
 # GICD Address
 gicd-paddr = "0xfe600000"
 # GICC Address
-gicc-paddr = "0xfe680000"
+gicc-paddr = "0xfe610000"
+# GICR Address of rk3588
+gicr-paddr = "0xfe680000"
 
 # PSCI
 psci-method = "smc" # arm,psci-1.0

@@ -26,9 +26,11 @@ use arm_gic::gic_v3::{GICD, gicc_get_current_irq, gicc_clear_current_irq, gic_gl
     static GICC: GicCpuInterface = GicCpuInterface::new(phys_to_virt(PhysAddr::from(axconfig::GICC_PADDR)).as_mut_ptr());
 
 #[cfg(feature = "gicv3")]
+#[used]
 #[export_name = "PLATFORM_GICD_BASE"]
 pub static GICD_BASE: usize = axconfig::PHYS_VIRT_OFFSET + axconfig::GICD_PADDR;
 #[cfg(feature = "gicv3")]
+#[used]
 #[export_name = "PLATFORM_GICR_BASE"]
 pub static GICR_BASE: usize = axconfig::PHYS_VIRT_OFFSET + axconfig::GICR_PADDR;
 
