@@ -58,6 +58,7 @@ members = [
     "apps/display",
     "apps/exception",
     "apps/helloworld",
+    "apps/bencher",
     "apps/memtest",
     "apps/fs/shell",
     "apps/net/echoserver",

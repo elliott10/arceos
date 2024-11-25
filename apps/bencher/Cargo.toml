@@ -1,0 +1,17 @@
+[package]
+name = "arceos-bencher"
+version = "0.1.0"
+edition = "2021"
+authors = ["Yuekai Jia <equation618@gmail.com>", "Luoyuan Xiao <xiaoluoyuan@163.com>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axstd = { path = "../../ulib/axstd", optional = true }
+
+[target.'cfg(target_arch = "aarch64")'.dependencies]
+aarch64-cpu = "9.4"
+
+[features]
+axstd = ["dep:axstd"]
+default = ["axstd"]
