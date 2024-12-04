@@ -107,14 +107,14 @@ pub extern "C" fn rust_main(cpu_id: usize, dtb: usize) -> ! {
     ax_println!(
         "\
         arch = {}\n\
-        platform = {}\n\
+        platform = roc-rk3588s-pc\n\
         target = {}\n\
         smp = {}\n\
         build_mode = {}\n\
         log_level = {}\n\
         ",
         option_env!("AX_ARCH").unwrap_or(""),
-        option_env!("AX_PLATFORM").unwrap_or(""),
+        //option_env!("AX_PLATFORM").unwrap_or(""),
         option_env!("AX_TARGET").unwrap_or(""),
         option_env!("AX_SMP").unwrap_or(""),
         option_env!("AX_MODE").unwrap_or(""),

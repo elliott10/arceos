@@ -108,7 +108,7 @@ fn bench_condvar() {
 }
 
 fn bench_switch() {
-    let iter = 10_000_000;
+    let iter = 40_000_000_000;
     thread::spawn(move || {
         for _ in 0..iter / 2 {
             thread::yield_now();
@@ -134,7 +134,7 @@ fn main() {
 
     bench_spawn();
     bench_switch();
-    bench_condvar();
+    //bench_condvar();
 
     println!("\nBencher end");
 }

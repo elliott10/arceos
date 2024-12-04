@@ -61,6 +61,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "038dfcf04a5feb68e9c60b21c9625a54c2c0616e79b72b0fd87075a056ae1d1b"
 
 [[package]]
+name = "arceos-bencher"
+version = "0.1.0"
+dependencies = [
+ "aarch64-cpu",
+ "axstd",
+]
+
+[[package]]
 name = "arceos-bwbench"
 version = "0.1.0"
 dependencies = [

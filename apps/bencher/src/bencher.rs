@@ -35,19 +35,20 @@ pub fn now_tsc() -> u64 {
 #[inline]
 pub fn now_ns() -> u64 {
     let freq = CNTFRQ_EL0.get() as u64;
-    now_tsc() * 1_000_000_000 / freq
+    now_tsc() * (1_000_000_000 / freq)
 }
 
 #[cfg(target_arch = "aarch64")]
 pub fn ticks_to_nanos(ticks: u64) -> u64 {
     let freq = CNTFRQ_EL0.get() as u64;
-    ticks * 1_000_000_000 / freq
+    ticks * (1_000_000_000 / freq)
 }
 
 pub struct Bencher {
     name: &'static str,
     count: u64,
     sum_tsc: u64,
+    max_tsc: u64,
 }
 
 impl Bencher {
@@ -56,6 +57,7 @@ impl Bencher {
             name,
             count: 0,
             sum_tsc: 0,
+            max_tsc: 0,
         }
     }
 
@@ -70,14 +72,22 @@ impl Bencher {
     pub fn add_result(&mut self, tsc: u64) {
         self.count += 1;
         self.sum_tsc += tsc;
+        self.set_max_tsc(tsc);
     }
 
     #[inline]
     pub fn bench_once<T>(&mut self, f: impl FnOnce() -> T) -> T {
         let start = now_tsc();
         let res = f();
-        self.add_result(now_tsc() - start);
+        let elapsed = now_tsc() - start;
+        self.add_result(elapsed);
         res
+    }
+
+    pub fn set_max_tsc(&mut self, tsc: u64) {
+        if self.max_tsc < tsc {
+            self.max_tsc = tsc;
+        }
     }
 
     pub fn bench_many<T>(&mut self, f: impl Fn() -> T, warmup: usize, run: usize) -> &mut Self {
@@ -93,6 +103,7 @@ impl Bencher {
 
         self.count += run as u64;
         self.sum_tsc += elapsed;
+        self.set_max_tsc(div_round(elapsed, run as u64));
         self
     }
 
@@ -100,6 +111,7 @@ impl Bencher {
     pub fn reset(&mut self, run: u64, elapsed: u64) -> &mut Self {
         self.count += run as u64;
         self.sum_tsc += elapsed;
+        self.set_max_tsc(div_round(elapsed, run));
         self
     }
 
@@ -109,6 +121,7 @@ impl Bencher {
         if self.count == 0 {
             return;
         }
+        println!("  Max cycles: {}", self.max_tsc);
         println!("  Average cycles: {}", div_round(self.sum_tsc, self.count));
         println!(
             "  Average nanoseconds: {}",
