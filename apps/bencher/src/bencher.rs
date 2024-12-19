@@ -23,12 +23,12 @@ pub fn ticks_to_nanos(ticks: u64) -> u64 {
 }
 
 #[cfg(target_arch = "aarch64")]
-use aarch64_cpu::registers::{CNTPCT_EL0, CNTFRQ_EL0, Readable};
+use aarch64_cpu::registers::{CNTVCT_EL0, CNTFRQ_EL0, Readable};
 
 #[cfg(target_arch = "aarch64")]
 #[inline]
 pub fn now_tsc() -> u64 {
-    CNTPCT_EL0.get()
+    CNTVCT_EL0.get()
 }
 
 #[cfg(target_arch = "aarch64")]

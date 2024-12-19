@@ -245,7 +245,7 @@ fn do_pwd(_args: &str) {
 
 fn do_uname(_args: &str) {
     let arch = option_env!("AX_ARCH").unwrap_or("");
-    let platform = option_env!("AX_PLATFORM").unwrap_or("");
+    let platform = "RK3588";
     let smp = match option_env!("AX_SMP") {
         None | Some("1") => "",
         _ => " SMP",
