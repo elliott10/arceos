@@ -14,7 +14,8 @@ smp = []
 alloc = []
 fp_simd = []
 paging = ["axalloc", "page_table_multiarch"]
-irq = []
+irq = ["gicv3"]
+gicv3 = []
 tls = ["alloc"]
 rtc = ["x86_rtc", "riscv_goldfish", "arm_pl031"]
 default = []
@@ -54,6 +55,7 @@ riscv_goldfish = { version = "0.1", optional = true }
 aarch64-cpu = "9.4"
 tock-registers = "0.8"
 arm_gicv2 = "0.1"
+arm_gic = { path = "../../crates/arm_gic" }
 arm_pl011 = "0.1"
 arm_pl031 = { version = "0.2", optional = true }
 dw_apb_uart = "0.1"
