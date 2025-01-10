@@ -40,6 +40,8 @@ mmio-regions = [
     [0x2800_E000, 0x1000],  # UART 2
     [0x2800_F000, 0x1000],  # UART 3
 
+    [0x3080_0000, 0x100000],  # gic 3
+
     [0x3000_0000, 0x800_0000],  # other devices
     [0x4000_0000, 0x1000_0000], # Pcie ecam
 
@@ -76,10 +78,11 @@ uart-paddr = 0x2800_D000        # uint
 uart-irq = 0x54                 # uint
 
 # GIC CPU Interface base address
-gicc-paddr = 0x3080_0000        # uint
+gicc-paddr = 0x30840000
 # GIC Distributor base address
 # (TODO: gicv3 dosen't support yet, there is no gicd and need a gicr address)
-gicd-paddr = 0x3088_0000        # uint
+gicd-paddr = 0x30800000
+gicr-paddr = 0x30880000
 
 # PSCI
 psci-method = "smc"             # str
