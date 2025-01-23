@@ -34,12 +34,14 @@ unsafe extern "C" {
 
 pub(crate) unsafe extern "C" fn rust_entry(cpu_id: usize, dtb: usize) {
     crate::mem::clear_bss();
+    let raw_cpu_id = cpu_id;
     let cpu_id = cpu_hard_id_to_logic_id(cpu_id);
     crate::arch::set_exception_vector_base(exception_vector_base as usize);
     crate::arch::write_page_table_root0(0.into()); // disable low address access
     crate::cpu::init_primary(cpu_id);
     super::aarch64_common::pl011::init_early();
     super::aarch64_common::generic_timer::init_early();
+    axlog::ax_println!("rust_entry: cpu_id={:#x}, raw_cpu_id={:#x}, dtb={:#x}", cpu_id, raw_cpu_id, dtb);
     rust_main(cpu_id, dtb);
 }
 

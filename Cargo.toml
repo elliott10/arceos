@@ -65,3 +65,7 @@ axdma = { path = "modules/axdma" }
 
 [profile.release]
 lto = true
+
+[patch."https://github.com/arceos-org/axdriver_crates.git"]
+axdriver_base = { path = "/home/os/rust/tmp/axdriver_crates/axdriver_base" }
+axdriver_net = { path = "/home/os/rust/tmp/axdriver_crates/axdriver_net" }

@@ -40,9 +40,11 @@ mmio-regions = [
     [0x2800_E000, 0x1000],  # UART 2
     [0x2800_F000, 0x1000],  # UART 3
 
-    [0x3080_0000, 0x100000],  # gic 3
+    #[0x3080_0000, 0x100000],  # gic 3
+    #[0x3200c000, 0x2000],  # ethernet0, Cadence GEM, irq=92, PHY: YT8521
+    #[0x3200e000, 0x2000],  # ethernet1, Cadence GEM, irq=100, PHY: YT8521
 
-    [0x3000_0000, 0x800_0000],  # other devices
+    [0x3000_0000, 0x800_0000],  # other devices: 0x3000_0000 ~ 0x3800_0000
     [0x4000_0000, 0x1000_0000], # Pcie ecam
 
     [0x5800_0000, 0x2800_0000], # 32-bit MMIO space
@@ -88,4 +90,4 @@ gicr-paddr = 0x30880000
 psci-method = "smc"             # str
 
 # CPU Hardware ID list
-cpu-id-list = [0x0, 0x100, 0x200, 0x201]
+cpu-id-list = [0x200, 0x201, 0x00, 0x100]

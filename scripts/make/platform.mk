@@ -35,3 +35,11 @@ else
   endif
   ARCH := $(_arch)
 endif
+
+ifeq ($(PLATFORM), aarch64-phytium-pi)
+phtpi: build
+	@echo 'Create legacy uboot image: arceos-phtpi.uImage'
+	mkimage -A arm64 -O linux -C none -T kernel -a 0x90000000 -e 0x90000000 -n "ArceOS for PhytiumPi" -d $(OUT_BIN) arceos-phtpi.uImage
+	cp arceos-phtpi.uImage /srv/tftp/
+	echo 'To bootup:  tftpboot 0x90000000 arceos-phtpi.uImage;  bootm 0x90000000 - $${fdtcontroladdr}'
+endif

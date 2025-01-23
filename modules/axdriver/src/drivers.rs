@@ -81,6 +81,63 @@ cfg_if::cfg_if! {
     }
 }
 
+
+cfg_if::cfg_if! {
+    if #[cfg(net_dev = "fxmac-phytiumpi")]{
+        use axalloc::global_allocator;
+        use axhal::mem::{phys_to_virt, virt_to_phys};
+
+        const PAGE_SIZE: usize = 4096;
+
+        //#[unsafe(export_name = "virt_to_phys_fxmac")]
+        #[unsafe(no_mangle)]
+        pub fn virt_to_phys_fxmac(addr: usize) -> usize {
+            virt_to_phys(addr.into()).into()
+        }
+
+        //#[unsafe(export_name = "phys_to_virt_fxmac")]
+        #[unsafe(no_mangle)]
+        pub fn phys_to_virt_fxmac(addr: usize) -> usize {
+            phys_to_virt(addr.into()).into()
+        }
+
+        #[unsafe(export_name = "dma_request_irq_fxmac")]
+        pub fn dma_request_irq_fxmac(irq: usize, handler: fn()) {
+            // #[cfg(feature = "irq")]
+            axhal::irq::set_enable(irq, true);
+            axhal::irq::register_handler(irq, handler);
+        }
+
+        #[unsafe(export_name = "dma_alloc_coherent_fxmac")]
+        pub fn dma_alloc_coherent_fxmac(pages: usize) -> (usize, usize) {
+            let vaddr = if let Ok(start_vaddr) = global_allocator().alloc_pages(pages, PAGE_SIZE) {
+                start_vaddr
+            } else {
+                error!("failed to alloc pages");
+                return (0, 0);
+            };
+            let paddr = virt_to_phys((vaddr).into());
+            info!("dma_alloc_coherent pages @ vaddr={:#x}, paddr={:#x}", vaddr, paddr);
+            (vaddr, paddr.as_usize())
+        }
+
+        #[unsafe(export_name = "dma_free_coherent_fxmac")]
+        fn dma_free_coherent_fxmac(vaddr: usize, pages: usize) {
+            global_allocator().dealloc_pages(vaddr, pages);
+        }
+
+        register_net_driver!(FXmacDriver, axdriver_net::fxmac::FXmacNic);
+
+        pub struct FXmacDriver;
+        impl DriverProbe for FXmacDriver {
+            fn probe_global() -> Option<AxDeviceEnum> {
+                debug!("fxmac-phytiumpi probe global");
+                axdriver_net::fxmac::FXmacNic::init(0).ok().map(AxDeviceEnum::from_net)
+            }
+        }
+    }
+}
+
 cfg_if::cfg_if! {
     if #[cfg(net_dev = "ixgbe")] {
         use crate::ixgbe::IxgbeHalImpl;
@@ -94,6 +151,7 @@ cfg_if::cfg_if! {
                     bdf: axdriver_pci::DeviceFunction,
                     dev_info: &axdriver_pci::DeviceFunctionInfo,
                 ) -> Option<crate::AxDeviceEnum> {
+                debug!("probe_pci for ixgbe");
                     use axdriver_net::ixgbe::{INTEL_82599, INTEL_VEND, IxgbeNic};
                     if dev_info.vendor_id == INTEL_VEND && dev_info.device_id == INTEL_82599 {
                         // Intel 10Gb Network
