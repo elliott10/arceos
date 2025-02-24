@@ -83,7 +83,7 @@ cfg_if::cfg_if! {
 
 
 cfg_if::cfg_if! {
-    if #[cfg(net_dev = "fxmac-phytiumpi")]{
+    if #[cfg(net_dev = "fxmac")]{
         use axalloc::global_allocator;
         use axhal::mem::{phys_to_virt, virt_to_phys};
 
