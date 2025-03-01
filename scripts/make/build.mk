@@ -52,4 +52,21 @@ $(OUT_DIR):
 $(OUT_BIN): _cargo_build $(OUT_ELF)
 	$(call run_cmd,$(OBJCOPY),$(OUT_ELF) --strip-all -O binary $@)
 
+ifeq ($(ARCH), aarch64)
+  uimg_arch := arm64
+else ifeq ($(ARCH), riscv64)
+  uimg_arch := riscv
+else
+  uimg_arch := $(ARCH)
+endif
+uimg_kernel_base := $(subst _,,$(shell axconfig-gen "configs/platforms/$(PLATFORM).toml" -r plat.kernel-base-paddr))
+
+$(OUT_UIMG): $(OUT_BIN)
+ifeq ($(PLATFORM), aarch64-bsta1000b)
+	$(call run_cmd,gzip -9 -cvf $(OUT_BIN) > arceos-fada.bin.gz)
+	$(call run_cmd,mkimage -f tools/bsta1000b/bsta1000b-fada-arceos.its $@)
+else
+	$(call run_cmd,mkimage,-A $(uimg_arch) -O linux -T kernel -C none -a $(uimg_kernel_base) -d $(OUT_BIN) $@)
+endif
+
 .PHONY: _cargo_build

@@ -41,6 +41,7 @@ V ?=
 TARGET_DIR ?= $(PWD)/target
 EXTRA_CONFIG ?=
 OUT_CONFIG ?= $(PWD)/.axconfig.toml
+UIMAGE ?= n
 
 # App options
 A ?= examples/helloworld
@@ -62,7 +63,6 @@ NET_DUMP ?= n
 NET_DEV ?= user
 VFIO_PCI ?=
 VHOST ?= n
-UIMAGE ?= n
 
 # Network options
 IP ?= 10.0.2.15
@@ -132,27 +132,12 @@ OUT_DIR ?= $(APP)
 APP_NAME := $(shell basename $(APP))
 LD_SCRIPT := $(TARGET_DIR)/$(TARGET)/$(MODE)/linker_$(PLAT_NAME).lds
 OUT_ELF := $(OUT_DIR)/$(APP_NAME)_$(PLAT_NAME).elf
-OUT_BIN := $(OUT_DIR)/$(APP_NAME)_$(PLAT_NAME).bin
-
+OUT_BIN := $(patsubst %.elf,%.bin,$(OUT_ELF))
+OUT_UIMG := $(patsubst %.elf,%.uimg,$(OUT_ELF))
 ifeq ($(UIMAGE), y)
-ifeq ($(ARCH), aarch64)
-	uarch := arm64
-else ifeq ($(ARCH), riscv64)
-	uarch := riscv
+  FINAL_IMG := $(OUT_UIMG)
 else
-	uarch := x86_64
-endif
-	_kernel_base := $(subst _,,$(shell axconfig-gen configs/platforms/$(PLATFORM).toml -r plat.kernel-base-paddr))
-	_uimage_name := arceos_$(PLATFORM).uimage
-uboot_img: build
-	@echo "Creating U-Boot image: $(_uimage_name)"
-ifeq ($(PLAT_NAME), aarch64-bsta1000b)
-	@gzip -9 -cvf $(OUT_BIN) > arceos-fada.bin.gz
-	@mkimage -f tools/bsta1000b/bsta1000b-fada-arceos.its $(_uimage_name)
-else
-	@mkimage -A $(uarch) -O linux -C none -T kernel -a $(_kernel_base) -e $(_kernel_base) -n "ArceOS on $(PLATFORM)" -d $(OUT_BIN) $(_uimage_name)
-endif
-	@echo 'Please boot from uboot> tftpboot $(_kernel_base) $(_uimage_name); bootm $(_kernel_base) - $${fdtcontroladdr}'
+  FINAL_IMG := $(OUT_BIN)
 endif
 
 all: build
@@ -171,7 +156,7 @@ defconfig: _axconfig-gen
 oldconfig: _axconfig-gen
 	$(call oldconfig)
 
-build: $(OUT_DIR) $(OUT_BIN)
+build: $(OUT_DIR) $(FINAL_IMG)
 
 disasm:
 	$(OBJDUMP) $(OUT_ELF) | less
