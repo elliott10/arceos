@@ -19,7 +19,9 @@ kernel-base-vaddr = "0xffff_0000_0048_0000"
 phys-virt-offset = "0xffff_0000_0000_0000"
 # MMIO regions with format (`base_paddr`, `size`).
 mmio-regions = [
+    ["0xfd5f8000", "0x100"], # bus ioc
     ["0xfeb50000", "0x1000"], # uart8250
+    ["0xfeba0000", "0x1000"], # uart7
     ["0xfe600000", "0x20000"], # arm,gic-v3
     ["0xfe680000", "0x100000"], # arm,gic-v3
     ["0xfe180000", "0x10000"], # rockchip,rk3588-pcie

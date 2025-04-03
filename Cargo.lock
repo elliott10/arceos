@@ -66,6 +66,7 @@ version = "0.1.0"
 dependencies = [
  "aarch64-cpu",
  "axstd",
+ "dw_apb_uart",
 ]
 
 [[package]]

@@ -126,6 +126,23 @@ fn bench_switch() {
 
 #[cfg_attr(feature = "axstd", no_mangle)]
 fn main() {
+    println!("Bencher init UART7 ...\n");
+
+    let bus_ioc: usize = 0xffff_0000_fd5f8000;
+    dw_apb_uart::DW8250::iomux_uart7_m2(bus_ioc);
+
+    // rk3588 UART7
+    let uart_base: usize = 0xffff_0000_feba0000;
+    let mut uart = dw_apb_uart::DW8250::new(uart_base);
+    uart.minit();
+    for i in 0..9
+    {
+        uart.putchar(b'H');
+        uart.putchar(b'i');
+        uart.putchar(b'\n');
+        uart.putchar(b'\r');
+    }
+
     println!("Bencher start ...\n");
 
     Bencher::new("rdtsc")
