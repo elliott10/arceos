@@ -1,10 +1,16 @@
 use crate::{irq::IrqHandler, mem::phys_to_virt};
 use arm_gicv2::{
-    GicCpuInterface, GicDistributor, GicHypervisorInterface, InterruptType, translate_irq,
+    GicCpuInterface, GicDistributor, InterruptType, translate_irq,
 };
-use axconfig::devices::{GICC_PADDR, GICD_PADDR, GICH_PADDR, GICV_PADDR, UART_IRQ};
+use axconfig::devices::{GICC_PADDR, GICD_PADDR, UART_IRQ};
 use kspin::SpinNoIrq;
 use memory_addr::PhysAddr;
+
+#[cfg(feature = "hv")]
+use arm_gicv2::GicHypervisorInterface;
+#[cfg(feature = "hv")]
+use axconfig::devices::{GICV_PADDR, GICH_PADDR};
+
 /// The maximum number of IRQs.
 pub const MAX_IRQ_COUNT: usize = 1024;
 
@@ -20,9 +26,13 @@ pub const TIMER_IRQ_NUM: usize = translate_irq(10, InterruptType::PPI).unwrap();
 pub const UART_IRQ_NUM: usize = translate_irq(UART_IRQ, InterruptType::SPI).unwrap();
 /// The IPI IRQ number.
 pub const IPI_IRQ_NUM: usize = translate_irq(1, InterruptType::SGI).unwrap();
+
 const GICD_BASE: PhysAddr = pa!(GICD_PADDR);
 const GICC_BASE: PhysAddr = pa!(GICC_PADDR);
+
+#[cfg(feature = "hv")]
 const GICV_BASE: PhysAddr = pa!(GICV_PADDR);
+#[cfg(feature = "hv")]
 const GICH_BASE: PhysAddr = pa!(GICH_PADDR);
 
 static GICD: SpinNoIrq<GicDistributor> =
@@ -30,7 +40,9 @@ static GICD: SpinNoIrq<GicDistributor> =
 
 // per-CPU, no lock
 static GICC: GicCpuInterface = GicCpuInterface::new(phys_to_virt(GICC_BASE).as_mut_ptr());
+#[cfg(feature = "hv")]
 static GICV: GicCpuInterface = GicCpuInterface::new(phys_to_virt(GICV_BASE).as_mut_ptr());
+#[cfg(feature = "hv")]
 static GICH: GicHypervisorInterface =
     GicHypervisorInterface::new(phys_to_virt(GICH_BASE).as_mut_ptr());
 
@@ -91,9 +103,14 @@ pub(crate) fn init_primary() {
     info!("Initialize GICv2...");
     GICD.lock().init();
     GICC.init();
-    GICV.init();
+
+    #[cfg(feature = "hv")]
+    {
+        GICV.init();
+    }
 }
 
+#[cfg(feature = "hv")]
 pub fn inject_interrupt(vector: usize) {
     let hcr = GICH.get_hcr();
     GICH.set_hcr(hcr | 1 << 0);
@@ -104,8 +121,10 @@ pub fn inject_interrupt(vector: usize) {
     GICH.set_lr(0, lr as u32);
 }
 
+#[cfg(feature = "hv")]
 pub struct MyVgic {}
 
+#[cfg(feature = "hv")]
 impl MyVgic {
     pub fn get_gich() -> &'static GicHypervisorInterface {
         &GICH

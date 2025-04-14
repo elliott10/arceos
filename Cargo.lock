@@ -92,7 +92,7 @@ version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "79947af37f4177cfead1110013d678905c37501914fba0efea834c3fe9a8d60c"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys",
 ]
 
 [[package]]
@@ -188,7 +188,7 @@ dependencies = [
 [[package]]
 name = "arm_gicv2"
 version = "0.1.0"
-source = "git+https://github.com/arceos-hypervisor/arm_gicv2.git?branch=sgi#956665adcdc6b09a28078db09ad3f09ed41af80b"
+source = "git+https://github.com/arceos-hypervisor/arm_gicv2?branch=debin%2F2vm_timer#0ad077649e030b9836a5dc55a5a01b1fd0246e11"
 dependencies = [
  "tock-registers 0.8.1",
 ]
@@ -478,7 +478,7 @@ dependencies = [
  "ns16550a",
  "page_table_entry",
  "page_table_multiarch",
- "percpu",
+ "percpu 0.2.0",
  "raw-cpuid 11.4.0",
  "riscv",
  "riscv_goldfish",
@@ -510,7 +510,7 @@ dependencies = [
  "kspin",
  "lazyinit",
  "log",
- "percpu",
+ "percpu 0.1.7",
 ]
 
 [[package]]
@@ -597,7 +597,7 @@ dependencies = [
  "crate_interface",
  "ctor_bare",
  "kernel_guard",
- "percpu",
+ "percpu 0.2.0",
 ]
 
 [[package]]
@@ -636,7 +636,7 @@ dependencies = [
  "lazyinit",
  "log",
  "memory_addr",
- "percpu",
+ "percpu 0.2.0",
  "rand",
  "scheduler",
  "timer_list",
@@ -983,16 +983,6 @@ checksum = "33d852cb9b869c2a9b3df2f71a3074817f01e1844f839a144f5fcef059a4eb5d"
 dependencies = [
  "libc",
  "windows-sys",
-]
-
-[[package]]
-name = "errno"
-version = "0.3.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33d852cb9b869c2a9b3df2f71a3074817f01e1844f839a144f5fcef059a4eb5d"
-dependencies = [
- "libc",
- "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1376,15 +1366,38 @@ checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
 name = "percpu"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95e24fa01075d3d4235b84d3dd5a0ec0fd3040602065ea155acd0849e9067007"
+dependencies = [
+ "cfg-if",
+ "percpu_macros 0.1.7",
+ "spin",
+ "x86",
+]
+
+[[package]]
+name = "percpu"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01e56c0c558952222967b592899f98765b48590e7bd7403bfd7075f73afc6ed6"
 dependencies = [
  "cfg-if",
  "kernel_guard",
- "percpu_macros",
+ "percpu_macros 0.2.0",
  "spin",
  "x86",
+]
+
+[[package]]
+name = "percpu_macros"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "421082ebe971ea22e82137de45ab6b9500bb178b364ebba02858bf7f80ec6471"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.98",
 ]
 
 [[package]]
@@ -1576,7 +1589,7 @@ version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "daae4c8e29d4d8c36fbda4c318ffa1755645766fefab8fcff61a8ecd577bb822"
 dependencies = [
- "tock-registers",
+ "tock-registers 0.8.1",
 ]
 
 [[package]]
