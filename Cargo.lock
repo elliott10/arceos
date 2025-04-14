@@ -478,7 +478,7 @@ dependencies = [
  "ns16550a",
  "page_table_entry",
  "page_table_multiarch",
- "percpu 0.2.0",
+ "percpu",
  "raw-cpuid 11.4.0",
  "riscv",
  "riscv_goldfish",
@@ -510,7 +510,7 @@ dependencies = [
  "kspin",
  "lazyinit",
  "log",
- "percpu 0.1.7",
+ "percpu",
 ]
 
 [[package]]
@@ -597,7 +597,7 @@ dependencies = [
  "crate_interface",
  "ctor_bare",
  "kernel_guard",
- "percpu 0.2.0",
+ "percpu",
 ]
 
 [[package]]
@@ -636,7 +636,7 @@ dependencies = [
  "lazyinit",
  "log",
  "memory_addr",
- "percpu 0.2.0",
+ "percpu",
  "rand",
  "scheduler",
  "timer_list",
@@ -1366,38 +1366,15 @@ checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
 name = "percpu"
-version = "0.1.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95e24fa01075d3d4235b84d3dd5a0ec0fd3040602065ea155acd0849e9067007"
-dependencies = [
- "cfg-if",
- "percpu_macros 0.1.7",
- "spin",
- "x86",
-]
-
-[[package]]
-name = "percpu"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01e56c0c558952222967b592899f98765b48590e7bd7403bfd7075f73afc6ed6"
 dependencies = [
  "cfg-if",
  "kernel_guard",
- "percpu_macros 0.2.0",
+ "percpu_macros",
  "spin",
  "x86",
-]
-
-[[package]]
-name = "percpu_macros"
-version = "0.1.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "421082ebe971ea22e82137de45ab6b9500bb178b364ebba02858bf7f80ec6471"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.98",
 ]
 
 [[package]]
