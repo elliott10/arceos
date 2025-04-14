@@ -1,7 +1,5 @@
 use crate::{irq::IrqHandler, mem::phys_to_virt};
-use arm_gicv2::{
-    GicCpuInterface, GicDistributor, InterruptType, translate_irq,
-};
+use arm_gicv2::{GicCpuInterface, GicDistributor, InterruptType, translate_irq};
 use axconfig::devices::{GICC_PADDR, GICD_PADDR, UART_IRQ};
 use kspin::SpinNoIrq;
 use memory_addr::PhysAddr;
@@ -9,7 +7,7 @@ use memory_addr::PhysAddr;
 #[cfg(feature = "hv")]
 use arm_gicv2::GicHypervisorInterface;
 #[cfg(feature = "hv")]
-use axconfig::devices::{GICV_PADDR, GICH_PADDR};
+use axconfig::devices::{GICH_PADDR, GICV_PADDR};
 
 /// The maximum number of IRQs.
 pub const MAX_IRQ_COUNT: usize = 1024;

@@ -5,9 +5,9 @@ use lazyinit::LazyInit;
 
 use riscv::register::sie;
 // use riscv_plic::{HartContext, InterruptSource, Plic};
-use sbi_rt::{send_ipi, HartMask};
+use sbi_rt::{HartMask, send_ipi};
 
-use memory_addr::{pa, PhysAddr};
+use memory_addr::{PhysAddr, pa};
 
 use crate::cpu::this_cpu_id;
 use crate::irq::IrqHandler;
