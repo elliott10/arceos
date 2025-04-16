@@ -107,8 +107,10 @@ fn bench_condvar() {
     Bencher::new("condvar").reset(iter, end - start).show();
 }
 
-fn bench_switch() {
-    let iter = 40_000_000_000;
+/// 创建两个线程，每次yield都会切到另一线程;
+/// 每个线程分别yield (iter/2)次;
+/// 单次yield的时间 = 总时间/iter
+fn bench_switch(iter: u64) {
     thread::spawn(move || {
         for _ in 0..iter / 2 {
             thread::yield_now();
@@ -117,6 +119,7 @@ fn bench_switch() {
 
     let start = now_tsc();
     for _ in 0..iter / 2 {
+        // 当前任务主动放弃CPU使用，主动切换到另一个就绪的任务
         thread::yield_now();
     }
     let end = now_tsc();
@@ -150,7 +153,24 @@ fn main() {
         .show();
 
     bench_spawn();
-    bench_switch();
+
+
+    // 评测task调度切换开销
+    println!("\nBencher: task switch ...");
+    #[cfg(target_arch = "aarch64")]
+    println!("AARCH64 Generic Timer Registers: CNTFRQ_EL0={}, CNTVCT_EL0={}", timer_freq(), now_tsc());
+
+    // 评测切换的次数
+
+    // 每1亿次输出一次GPIO
+    let switch_count = 100_000_000;
+
+    let iter = 100;
+    for i in 0..iter {
+        println!("\n---------\nBencher: {} task switch count = {}\n", i, switch_count);
+        bench_switch(switch_count);
+    }
+
     //bench_condvar();
 
     println!("\nBencher end");

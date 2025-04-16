@@ -26,6 +26,15 @@ pub fn ticks_to_nanos(ticks: u64) -> u64 {
 use aarch64_cpu::registers::{CNTVCT_EL0, CNTFRQ_EL0, Readable};
 
 #[cfg(target_arch = "aarch64")]
+const CPUFRQ_HZ: u64 = 2_400_000_000; // RK3588 CPU主频2.4GHz
+
+#[cfg(target_arch = "aarch64")]
+#[inline]
+pub fn timer_freq() -> u64 {
+    CNTFRQ_EL0.get()
+}
+
+#[cfg(target_arch = "aarch64")]
 #[inline]
 pub fn now_tsc() -> u64 {
     CNTVCT_EL0.get()
@@ -121,12 +130,20 @@ impl Bencher {
         if self.count == 0 {
             return;
         }
-        println!("  Max cycles: {}", self.max_tsc);
-        println!("  Average cycles: {}", div_round(self.sum_tsc, self.count));
+        println!("  Benchmark last seconds: {} s", self.sum_tsc / timer_freq());
+        // println!("  Max Timer cycles: {}", self.max_tsc);
+        println!("  Average Timer cycles: {}", div_round(self.sum_tsc, self.count));
         println!(
             "  Average nanoseconds: {}",
             div_round(ticks_to_nanos(self.sum_tsc), self.count)
         );
+
+        #[cfg(target_arch = "aarch64")]
+        {
+            let timer_freq = timer_freq();
+            println!("  Now Timer Freq = {}", timer_freq);
+            println!("  Average RK3588 2.4GHz CPU cycles: {}", div_round(self.sum_tsc, self.count) * (CPUFRQ_HZ / timer_freq));
+        }
     }
 }
 
