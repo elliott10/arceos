@@ -132,7 +132,8 @@ impl Bencher {
         }
         println!("  Benchmark last seconds: {} s", self.sum_tsc / timer_freq());
         // println!("  Max Timer cycles: {}", self.max_tsc);
-        println!("  Average Timer cycles: {}", div_round(self.sum_tsc, self.count));
+        //println!("  Average Timer cycles: {}", div_round(self.sum_tsc, self.count));
+
         println!(
             "  Average nanoseconds: {}",
             div_round(ticks_to_nanos(self.sum_tsc), self.count)
@@ -141,7 +142,8 @@ impl Bencher {
         #[cfg(target_arch = "aarch64")]
         {
             let timer_freq = timer_freq();
-            println!("  Now Timer Freq = {}", timer_freq);
+            //println!("  Now Timer Freq = {}", timer_freq);
+
             println!("  Average RK3588 2.4GHz CPU cycles: {}", div_round(self.sum_tsc, self.count) * (CPUFRQ_HZ / timer_freq));
         }
     }

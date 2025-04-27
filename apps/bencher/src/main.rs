@@ -138,10 +138,16 @@ fn main() {
     let uart_base: usize = 0xffff_0000_feba0000;
     let mut uart = dw_apb_uart::DW8250::new(uart_base);
     uart.minit();
-    for i in 0..9
     {
-        uart.putchar(b'H');
-        uart.putchar(b'i');
+        uart.putchar(b'\n');
+        uart.putchar(b'\r');
+        uart.putchar(b'B');
+        uart.putchar(b'e');
+        uart.putchar(b'n');
+        uart.putchar(b'c');
+        uart.putchar(b'h');
+        uart.putchar(b'e');
+        uart.putchar(b'r');
         uart.putchar(b'\n');
         uart.putchar(b'\r');
     }
@@ -154,24 +160,30 @@ fn main() {
 
     bench_spawn();
 
+    //bench_condvar();
 
-    // 评测task调度切换开销
+    ///////// 评测task调度切换开销
     println!("\nBencher: task switch ...");
     #[cfg(target_arch = "aarch64")]
     println!("AARCH64 Generic Timer Registers: CNTFRQ_EL0={}, CNTVCT_EL0={}", timer_freq(), now_tsc());
 
     // 评测切换的次数
 
-    // 每1亿次输出一次GPIO
+    // 每1亿次切换将输出一次GPIO UART信号
+    println!("After every 100 million task switches, a GPIO UART signal will be output");
     let switch_count = 100_000_000;
 
     let iter = 100;
     for i in 0..iter {
         println!("\n---------\nBencher: {} task switch count = {}\n", i, switch_count);
+        {
+            uart.putchar(b'H');
+            uart.putchar(b'i');
+            uart.putchar(b'\n');
+            uart.putchar(b'\r');
+        }
         bench_switch(switch_count);
     }
-
-    //bench_condvar();
 
     println!("\nBencher end");
 }
