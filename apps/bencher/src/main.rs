@@ -5,6 +5,9 @@
 #[cfg(feature = "axstd")]
 extern crate axstd as std;
 
+#[cfg(target_arch = "aarch64")]
+mod cycle;
+
 #[macro_use]
 #[path = "bencher.rs"]
 mod bencher;
@@ -118,11 +121,23 @@ fn bench_switch(iter: u64) {
     });
 
     let start = now_tsc();
+    let cpu_cycle_start = cycle::cpu_cycle();
+
     for _ in 0..iter / 2 {
         // 当前任务主动放弃CPU使用，主动切换到另一个就绪的任务
         thread::yield_now();
     }
+
+    let cpu_cycle_end = cycle::cpu_cycle();
     let end = now_tsc();
+
+    let cpu_cycle = cpu_cycle_end - cpu_cycle_start;
+    let timer_sum = end - start;
+    let cpu_freq = cycle::cpu_freq(cpu_cycle, timer_sum);
+
+    CPUFRQ_HZ.store(cpu_freq, core::sync::atomic::Ordering::Relaxed);
+
+    println!("CPU Freq = {}Hz now.", cpu_freq);
 
     Bencher::new("switch").reset(iter, end - start).show();
 }
@@ -131,8 +146,10 @@ fn bench_switch(iter: u64) {
 fn main() {
     println!("Bencher init UART7 ...\n");
 
+    /*
     let bus_ioc: usize = 0xffff_0000_fd5f8000;
     dw_apb_uart::DW8250::iomux_uart7_m2(bus_ioc);
+    */
 
     // rk3588 UART7
     let uart_base: usize = 0xffff_0000_feba0000;
@@ -169,20 +186,49 @@ fn main() {
 
     // 评测切换的次数
 
+    cycle::isb();
+    println!("CPU{} cycle={}, timer cnt={}", cycle::get_cpu_id(), cycle::cpu_cycle(), cycle::timer_cnt());
+    println!("PMUSERENR_EL0={:#x}, PMCNTENSET_EL0={:#x}, PMCR_EL0={:#x}", cycle::armv8_pmuserenr(), cycle::armv8_pmcntenset(), cycle::armv8_pmcr());
+    cycle::enable_cpu_cycle();
+
     // 每1亿次切换将输出一次GPIO UART信号
     println!("After every 100 million task switches, a GPIO UART signal will be output");
     let switch_count = 100_000_000;
 
+    // User access PMU
+    cycle::reset_pmu_all();
+    cycle::enable_pmu_all();
+    let mut cpu_cycle = 0;
+
     let iter = 100;
     for i in 0..iter {
         println!("\n---------\nBencher: {} task switch count = {}\n", i, switch_count);
+
         {
             uart.putchar(b'H');
             uart.putchar(b'i');
             uart.putchar(b'\n');
             uart.putchar(b'\r');
         }
+
+        let timer_start = cycle::timer_cnt();
+        let cpu_cycle_start = cycle::cpu_cycle();
+
         bench_switch(switch_count);
+
+        let cpu_cycle_end = cycle::cpu_cycle();
+        let timer_end = cycle::timer_cnt();
+
+        cpu_cycle = cpu_cycle_end - cpu_cycle_start;
+        let timer_sum = timer_end - timer_start;
+
+        let timer_freq = cycle::timer_freq();
+        let s_sum = timer_sum / timer_freq;
+        let ns_sum = timer_sum * (1_000_000_000 / timer_freq);
+
+        let cpu_freq = cycle::cpu_freq(cpu_cycle, timer_sum);
+        println!("\nIn {}s, {}ns, Average cost CPU cycles: {}", s_sum, ns_sum, cpu_cycle/switch_count);
+        println!("CPU Freq = {}Hz, CPU Cycle Counter = {} from {} to {}", cpu_freq, cpu_cycle, cpu_cycle_start, cpu_cycle_end);
     }
 
     println!("\nBencher end");

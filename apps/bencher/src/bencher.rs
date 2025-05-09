@@ -24,9 +24,10 @@ pub fn ticks_to_nanos(ticks: u64) -> u64 {
 
 #[cfg(target_arch = "aarch64")]
 use aarch64_cpu::registers::{CNTVCT_EL0, CNTFRQ_EL0, Readable};
+use core::sync::atomic::AtomicU64;
 
 #[cfg(target_arch = "aarch64")]
-const CPUFRQ_HZ: u64 = 2_400_000_000; // RK3588 CPU主频2.4GHz
+pub static CPUFRQ_HZ: AtomicU64 = AtomicU64::new(2_400_000_000); // RK3588 CPU主频2.4GHz
 
 #[cfg(target_arch = "aarch64")]
 #[inline]
@@ -144,7 +145,7 @@ impl Bencher {
             let timer_freq = timer_freq();
             //println!("  Now Timer Freq = {}", timer_freq);
 
-            println!("  Average RK3588 2.4GHz CPU cycles: {}", div_round(self.sum_tsc, self.count) * (CPUFRQ_HZ / timer_freq));
+            println!("  Average RK3588 2.4GHz CPU cycles: {}", div_round(self.sum_tsc, self.count) * (CPUFRQ_HZ.load(core::sync::atomic::Ordering::Relaxed) / timer_freq) );
         }
     }
 }
