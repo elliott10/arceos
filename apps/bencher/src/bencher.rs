@@ -145,7 +145,7 @@ impl Bencher {
             let timer_freq = timer_freq();
             //println!("  Now Timer Freq = {}", timer_freq);
 
-            println!("  Average RK3588 2.4GHz CPU cycles: {}", div_round(self.sum_tsc, self.count) * (CPUFRQ_HZ.load(core::sync::atomic::Ordering::Relaxed) / timer_freq) );
+            println!("  Average RK3588(2.4GHz) CPU cycles: {}", div_round(self.sum_tsc, self.count) * (CPUFRQ_HZ.load(core::sync::atomic::Ordering::Relaxed) / timer_freq) );
         }
     }
 }

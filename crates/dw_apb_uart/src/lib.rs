@@ -24,6 +24,8 @@ register_structs! {
         /// Uart Status Register.
         (0x7c => usr: ReadOnly<u32>),
         (0x80 => _reserved1),
+        (0x88 => srr: ReadWrite<u32>),
+        (0x8c => _reserved2),
         (0xc0 => dlf: ReadWrite<u32>),
         (0xc4 => @END),
     }
@@ -72,6 +74,42 @@ impl DW8250 {
                       GPIO1B4_MASK | GPIO1B5_MASK,
                       GPIO1B4_UART7_RX_M2 << GPIO1B4_SHIFT |
                       GPIO1B5_UART7_TX_M2 << GPIO1B5_SHIFT);
+    }
+
+    // Enable GPIO3_C6_u, RK_PC6=22;
+    // Pin = bank(3)*32 + number( C(2)*8 + 6 ) = 96 + 22 = 118
+    // Data direction(GPIO_SWPORT_DDR_H): Output; Output data: High, Low;
+    pub fn gpio_output(gpio_bank: usize, number: usize, is_high: bool) {
+        let mut base_offset = 0;
+        let mut num_shift = 0;
+        // number = [0, 31]
+        if number < 16 {
+            // Output data for low 16 bits
+            base_offset = 0;
+            num_shift = number;
+        } else {
+            // Output data for high 16 bits
+            base_offset = 0x4;
+            num_shift = number % 16;
+        }
+        let data_base = gpio_bank + base_offset;
+        let direction_base = gpio_bank + 0x8 + base_offset;
+        let mask = (1 << num_shift) << 16;
+        let direction = if is_high { 1 } else { 0 };
+        unsafe {
+            // Set data direction: output
+            core::ptr::write_volatile(direction_base as *mut u32, (1 << num_shift) | mask);
+
+            // Set data: high/low; high = 1, low = 0;
+            core::ptr::write_volatile(data_base as *mut u32, (direction << num_shift) | mask);
+        }
+    }
+
+    pub fn gpio_output_clear(gpio_bank: usize) {
+        unsafe {
+            core::ptr::write_volatile(gpio_bank as *mut u32, 0 | (0xffff << 16));
+            core::ptr::write_volatile((gpio_bank + 0x4) as *mut u32, 0 | (0xffff << 16));
+        }
     }
 
     /// DW8250 initialize
