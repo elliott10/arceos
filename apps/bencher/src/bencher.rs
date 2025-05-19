@@ -59,6 +59,9 @@ pub struct Bencher {
     count: u64,
     sum_tsc: u64,
     max_tsc: u64,
+    sum_cpu_cycle: u64,
+    max_cpu_cycle: u64,
+    min_cpu_cycle: u64,
 }
 
 impl Bencher {
@@ -68,6 +71,9 @@ impl Bencher {
             count: 0,
             sum_tsc: 0,
             max_tsc: 0,
+            sum_cpu_cycle: 0,
+            max_cpu_cycle: 0,
+            min_cpu_cycle: 0,
         }
     }
 
@@ -100,6 +106,15 @@ impl Bencher {
         }
     }
 
+    pub fn set_a_cpu_cycle(&mut self, cpu_cycle: u64) {
+        if cpu_cycle > self.max_cpu_cycle {
+            self.max_cpu_cycle = cpu_cycle;
+        }
+        if (cpu_cycle < self.min_cpu_cycle) || (self.min_cpu_cycle == 0) {
+            self.min_cpu_cycle = cpu_cycle;
+        }
+    }
+
     pub fn bench_many<T>(&mut self, f: impl Fn() -> T, warmup: usize, run: usize) -> &mut Self {
         for _ in 0..warmup {
             let _ = f();
@@ -118,10 +133,15 @@ impl Bencher {
     }
 
     // Maybe - xiaoluoyuan@163.com
-    pub fn reset(&mut self, run: u64, elapsed: u64) -> &mut Self {
+    pub fn reset(&mut self, run: u64, elapsed: u64, cpu_cycle: u64) -> &mut Self {
         self.count += run as u64;
         self.sum_tsc += elapsed;
+        self.sum_cpu_cycle += cpu_cycle;
+
+        if self.max_tsc == 0 {
         self.set_max_tsc(div_round(elapsed, run));
+        }
+
         self
     }
 
@@ -136,16 +156,20 @@ impl Bencher {
         //println!("  Average Timer cycles: {}", div_round(self.sum_tsc, self.count));
 
         println!(
-            "  Average nanoseconds: {}",
+            "  Average nanoseconds: {} ns",
             div_round(ticks_to_nanos(self.sum_tsc), self.count)
         );
 
         #[cfg(target_arch = "aarch64")]
         {
-            let timer_freq = timer_freq();
-            //println!("  Now Timer Freq = {}", timer_freq);
+            //let timer_freq = timer_freq();
+            //println!("  Average RK3588(2.4GHz) CPU cycles: {}", div_round(self.sum_tsc, self.count) * (CPUFRQ_HZ.load(core::sync::atomic::Ordering::Relaxed) / timer_freq) );
 
-            println!("  Average RK3588(2.4GHz) CPU cycles: {}", div_round(self.sum_tsc, self.count) * (CPUFRQ_HZ.load(core::sync::atomic::Ordering::Relaxed) / timer_freq) );
+            if self.max_cpu_cycle != 0 {
+            println!("  Min CPU cycles: {}", self.min_cpu_cycle);
+            println!("  Average CPU cycles: {}", div_round(self.sum_cpu_cycle, self.count));
+            println!("  Max CPU cycles: {}", self.max_cpu_cycle);
+            }
         }
     }
 }

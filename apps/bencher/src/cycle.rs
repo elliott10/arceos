@@ -12,11 +12,17 @@ pub fn read_mpidr() -> u64 {
 
 /// Converts MPIDR to CPU ID
 pub fn mpidr2cpuid(mpidr: u64) -> usize {
-    // RK3588
-    ((mpidr >> 8) & 0xff) as usize
-
     // Qemu
-    //(mpidr & 0xffffff & 0xff) as usize
+    #[cfg(feature = "qemu")]
+    {
+        (mpidr & 0xffffff & 0xff) as usize
+    }
+
+    // RK3588
+    #[cfg(not(feature = "qemu"))]
+    {
+        ((mpidr >> 8) & 0xff) as usize
+    }
 }
 
 pub fn get_cpu_id() -> usize {
@@ -35,6 +41,8 @@ pub fn dsb() {
         core::arch::asm!("dsb sy");
     }
 }
+
+/// Instruction Sync Barrier
 pub fn isb() {
     unsafe {
         core::arch::asm!("isb");
@@ -93,7 +101,7 @@ pub fn armv8_pmcr_set(val: u64) {
 }
 
 pub fn enable_cpu_cycle() {
-    println!("Enable User Access PMU @ CPU {}", get_cpu_id());
+    println!("Enable User Access PMU @ CPU {}\n", get_cpu_id());
     // pmuserenr_el0, Enable or disables EL0 access to the performance Monitors
     unsafe { core::arch::asm!("msr pmuserenr_el0, {}", in(reg) (0xf)) };
     armv8_pmcr_set(ARMV8_PMCR_LC | ARMV8_PMCR_E);

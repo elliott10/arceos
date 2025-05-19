@@ -16,3 +16,5 @@ aarch64-cpu = "9.4"
 [features]
 axstd = ["dep:axstd"]
 default = ["axstd"]
+#default = ["axstd", "qemu"]
+qemu = []
