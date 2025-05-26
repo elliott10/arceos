@@ -37,9 +37,9 @@ pub fn set_enable(irq_num: usize, enabled: bool) {
     let mut gicd = GICD.lock();
     let d = gicd.as_mut().unwrap();
     if enabled {
-        d.irq_enable(irq_num.into());
+        d.irq_enable(irq_num.into()).unwrap();
     } else {
-        d.irq_disable(irq_num.into());
+        d.irq_disable(irq_num.into()).unwrap();
     }
 }
 
@@ -203,7 +203,8 @@ fn send_sgi_inner(aff3: u8, aff2: u8, aff1: u8, target: u8, vector: usize, to_al
         (1 << target) |                     // target bitmap
         ((aff1 as usize) << 16) |           // affinity level 1
         ((aff2 as usize) << 32) |           // affinity level 2
-        ((aff3 as usize) << 48) ;           // affinity level 3
+        ((aff3 as usize) << 48) |           // affinity level 3
+        ((to_all as usize) << 40);          // interrupt routing mode
 
     write_sysreg!(icc_sgi1r_el1, value as _);
 }
