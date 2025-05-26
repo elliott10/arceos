@@ -4,6 +4,8 @@ use axconfig::devices::{GICC_PADDR, GICD_PADDR, GICR_PADDR, UART_IRQ};
 use core::ptr::NonNull;
 use kspin::SpinNoIrq;
 use memory_addr::PhysAddr;
+use arm_gicv2::InterruptType;
+use arm_gicv2::translate_irq;
 
 /// The maximum number of IRQs.
 pub const MAX_IRQ_COUNT: usize = 1024;
@@ -18,9 +20,11 @@ pub const TIMER_IRQ_NUM: usize = arm_gic_driver::IntId::ppi(10).to_u32() as usiz
 
 /// The UART IRQ number.
 pub const UART_IRQ_NUM: usize = arm_gic_driver::IntId::spi(UART_IRQ as u32).to_u32() as usize;
+/// The IPI IRQ number.
+pub const IPI_IRQ_NUM: usize = translate_irq(1, InterruptType::SGI).unwrap();
 
 const GICD_BASE: PhysAddr = pa!(GICD_PADDR);
-const GICC_BASE: PhysAddr = pa!(GICR_PADDR);
+const GICR_BASE: PhysAddr = pa!(GICR_PADDR);
 
 static GICD: SpinNoIrq<Option<arm_gic_driver::v3::Gic>> = SpinNoIrq::new(None);
 static GICC: SpinNoIrq<Option<Box<dyn InterfaceCPU>>> = SpinNoIrq::new(None);
@@ -81,7 +85,7 @@ pub(crate) fn init_primary() {
     info!("Initialize GICv3...");
     let gicd = arm_gic_driver::v3::Gic::new(
         NonNull::new(phys_to_virt(GICD_BASE).as_mut_ptr()).unwrap(),
-        NonNull::new(phys_to_virt(GICC_BASE).as_mut_ptr()).unwrap(),
+        NonNull::new(phys_to_virt(GICR_BASE).as_mut_ptr()).unwrap(),
         arm_gic_driver::v3::Security::OneNS,
     );
     let interface = gicd.cpu_interface();

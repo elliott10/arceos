@@ -75,12 +75,6 @@ arm_pl011 = "0.1"
 arm_pl031 = { version = "0.2", optional = true }
 dw_apb_uart = "0.1"
 
-[target.'cfg(all(target_arch = "aarch64", not(feature = "gicv3"), feature = "hv"))'.dependencies]
-arm_gicv2 = { git = "https://github.com/arceos-hypervisor/arm_gicv2", features = ["el2"] }
-
-[target.'cfg(all(target_arch = "aarch64", not(feature = "gicv3"), not(feature = "hv")))'.dependencies]
-arm_gicv2 = { git = "https://github.com/arceos-hypervisor/arm_gicv2" }
-
 [target.'cfg(target_arch = "loongarch64")'.dependencies]
 loongArch64 = "0.2.4"
 ns16550a = "0.4.0"
