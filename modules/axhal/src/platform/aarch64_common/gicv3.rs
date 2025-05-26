@@ -133,7 +133,7 @@ pub fn inject_interrupt(vector: usize) {
             trace!("virtual irq {} enables again", vector);
         }
     }
-    trace!("To Inject IRQ {}, find lr {}", vector, free_lr);
+    trace!("use free lr {} to inject irq {}", free_lr, vector);
 
     if free_lr == -1 {
         panic!("No free list register to inject IRQ {}", vector);
@@ -197,16 +197,40 @@ fn write_lr(id: usize, val: u64) {
     }
 }
 
+fn send_sgi_inner(aff3: u8, aff2: u8, aff1: u8, target: u8, vector: usize, to_all: bool) {
+    let value = 
+        ((vector & 0xF) << 24) |            // vector
+        (1 << target) |                     // target bitmap
+        ((aff1 as usize) << 16) |           // affinity level 1
+        ((aff2 as usize) << 32) |           // affinity level 2
+        ((aff3 as usize) << 48) ;           // affinity level 3
+
+    write_sysreg!(icc_sgi1r_el1, value as _);
+}
+
 /// Sends Software Generated Interrupt (SGI)(s) (usually IPI) to the given dest CPU.
-pub fn send_sgi_one(dest_cpu_id: usize, irq_num: usize) {
-    todo!()
+pub fn send_sgi_one(dest: usize, vector: usize) {
+    #[cfg(platform_family = "aarch64-rk3588j")]
+    {
+        // learnt from hVisor, that rockchip socs follow the 0.0.x.0 affinity scheme
+        // while other socs follow 0.0.0.x
+        //
+        // the best and standard way is reading
+        send_sgi_inner(0, 0, dest as _, 0, vector, false);
+    }
+    #[cfg(not(platform_family = "aarch64-rk3588j"))]
+    {
+        // the default affinity scheme is 0.0.0.x
+        send_sgi_inner(0, 0, 0, dest as _, vector, false);
+    }
 }
 
 /// Sends a broadcast IPI to all CPUs.
-pub fn send_sgi_all(irq_num: usize) {
-    todo!()
+pub fn send_sgi_all(vector: usize) {
+    send_sgi_inner(0, 0, 0, 0, vector, true);
 }
 
+// dummy implementation
 pub struct MyVgic{}
 
 /// Initializes GICD, GICC on the primary CPU.
