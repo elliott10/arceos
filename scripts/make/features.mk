@@ -48,6 +48,10 @@ ifeq ($(BUS),mmio)
   ax_feat += bus-mmio
 endif
 
+ifeq ($(GICV3),y)
+  ax_feat += gicv3
+endif
+
 ifeq ($(shell test $(SMP) -gt 1; echo $$?),0)
   lib_feat += smp
 endif
