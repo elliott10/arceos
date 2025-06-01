@@ -94,21 +94,27 @@ pub(crate) fn init_early() {
 }
 
 pub(crate) fn init_percpu() {
+    use aarch64_cpu::registers::{CNTHCTL_EL2, CNTVOFF_EL2};
+    use tock_registers::interfaces::{ReadWriteable, Readable, Writeable};
+    // Disable EL1 timer traps and the timer offset.
+    CNTHCTL_EL2.modify(CNTHCTL_EL2::EL1PCEN::SET + CNTHCTL_EL2::EL1PCTEN::SET);
+    CNTVOFF_EL2.set(0);
+
     #[cfg(all(feature = "irq", not(feature = "hv")))]
     {
         CNTP_CTL_EL0.write(CNTP_CTL_EL0::ENABLE::SET);
         CNTP_TVAL_EL0.set(0);
     }
-    #[cfg(all(feature = "irq", feature = "hv"))]
-    {
-        unsafe {
-            // ENABLE, bit [0], Enables the timer.
-            // * 0b0: Timer disabled.
-            // * 0b1: Timer enabled.
-            core::arch::asm!("msr CNTHP_CTL_EL2, {0:x}", in(reg) 0b1);
-            core::arch::asm!("msr CNTHP_TVAL_EL2, {0:x}", in(reg) 0);
-        }
-    }
+    // #[cfg(all(feature = "irq", feature = "hv"))]
+    // {
+    //     unsafe {
+    //         // ENABLE, bit [0], Enables the timer.
+    //         // * 0b0: Timer disabled.
+    //         // * 0b1: Timer enabled.
+    //         core::arch::asm!("msr CNTHP_CTL_EL2, {0:x}", in(reg) 0b1);
+    //         core::arch::asm!("msr CNTHP_TVAL_EL2, {0:x}", in(reg) 0);
+    //     }
+    // }
     #[cfg(feature = "irq")]
     crate::platform::irq::set_enable(crate::platform::irq::TIMER_IRQ_NUM, true);
 }

@@ -20,7 +20,7 @@ pub use self::context::{FpState, TaskContext, TrapFrame};
 /// Allows the current CPU to respond to interrupts.
 #[inline]
 pub fn enable_irqs() {
-    unsafe { asm!("msr daifclr, #2") };
+    // unsafe { asm!("msr daifclr, #2") };
 }
 
 /// Makes the current CPU to ignore interrupts.
