@@ -165,5 +165,6 @@ pub fn getchar() -> Option<u8> {
 
 /// UART simply initialize
 pub fn init_early() {
-    UART.lock().init();
+    //On the rk3588j platform we use, uboot will first initialize the serial port, so we don't need to initialize it again. If other platforms do not have this feature, we need to uncomment this
+    // UART.lock().init();
 }

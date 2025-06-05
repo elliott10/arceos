@@ -6,6 +6,7 @@
 #     - `MODE`: Build mode: release, debug
 #     - `LOG:` Logging level: warn, error, info, debug, trace
 #     - `V`: Verbose level: (empty), 1, 2
+#     - `GICV3`: Enable GICv3 (default is n)
 #     - `TARGET_DIR`: Artifact output directory (cargo target directory)
 #     - `EXTRA_CONFIG`: Extra config specification file
 #     - `OUT_CONFIG`: Final config file that takes effect
@@ -38,6 +39,7 @@ SMP ?= 1
 MODE ?= release
 LOG ?= warn
 V ?=
+GICV3 ?= n
 TARGET_DIR ?= $(PWD)/target
 EXTRA_CONFIG ?=
 OUT_CONFIG ?= $(PWD)/.axconfig.toml
@@ -109,6 +111,7 @@ export AX_LOG=$(LOG)
 export AX_TARGET=$(TARGET)
 export AX_IP=$(IP)
 export AX_GW=$(GW)
+export AX_GICV3=$(GICV3)
 
 ifneq ($(filter $(MAKECMDGOALS),unittest unittest_no_fail_fast),)
   # When running unit tests, set `AX_CONFIG_PATH` to empty for dummy config

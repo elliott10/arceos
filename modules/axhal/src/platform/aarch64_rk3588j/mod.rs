@@ -28,6 +28,11 @@ unsafe extern "C" {
     fn rust_main_secondary(cpu_id: usize);
 }
 
+#[cfg(feature = "smp")]
+use crate::mp::CPU_HWID;
+#[cfg(feature = "smp")]
+use crate::mp::MAX_HARTS;
+
 pub(crate) unsafe extern "C" fn rust_entry(cpu_id: usize, dtb: usize) {
     crate::mem::clear_bss();
     crate::arch::set_exception_vector_base(exception_vector_base as usize);
@@ -41,7 +46,19 @@ pub(crate) unsafe extern "C" fn rust_entry(cpu_id: usize, dtb: usize) {
 
 #[cfg(feature = "smp")]
 #[allow(dead_code)] // FIXME: temporariy allowd to bypass clippy warnings.
-pub(crate) unsafe extern "C" fn rust_entry_secondary(cpu_id: usize) {
+pub(crate) unsafe extern "C" fn rust_entry_secondary(cpu_hwid: usize) {
+    let mut cpu_id = cpu_hwid;
+    let mut map_success = false;
+    for index in 0..MAX_HARTS {
+        if cpu_id == CPU_HWID[index] {
+            cpu_id = index;
+            map_success = true;
+            break;
+        }
+    }
+    if !map_success {
+        panic!("CPU{} not found", cpu_id);
+    }
     crate::arch::set_exception_vector_base(exception_vector_base as usize);
     crate::arch::write_page_table_root0(0.into()); // disable low address access
     crate::cpu::init_secondary(cpu_id);
