@@ -51,6 +51,10 @@ unsafe fn init_mmu_el2() {
             + HCR_EL2::TSC::EnableTrapEl1SmcToEl2,
     );
 
+    // Enable the GICv3 interface so that guest VMs can operate
+    // gicv3 with CSRs.
+    ICH_HCR_EL2.modify(ICH_HCR_EL2::En.val(1));
+
     // Device-nGnRE memory
     let attr0 = MAIR_EL2::Attr0_Device::nonGathering_nonReordering_EarlyWriteAck;
     // Normal memory

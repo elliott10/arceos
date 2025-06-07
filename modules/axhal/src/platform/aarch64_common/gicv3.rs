@@ -106,7 +106,7 @@ fn wake_up_gicr(cpu_id: usize) {
 pub(crate) fn init_primary() {
     warn!("Initialize GICv3...");
 
-    wake_up_gicr(this_cpu_id());
+    // wake_up_gicr(this_cpu_id());
 
     // SAFETY: Set the SRE[0] bit to 1 to enable Group 1 interrupts.
     ICC_SRE_EL2.set(0b1);
@@ -134,5 +134,5 @@ pub(crate) fn init_secondary() {
     // let interface = GICD.lock().as_mut().unwrap().cpu_interface();
     // GICC.lock().replace(interface);
     // GICC.lock().as_mut().unwrap().setup();
-    wake_up_gicr(this_cpu_id());
+    // wake_up_gicr(this_cpu_id());
 }

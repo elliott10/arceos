@@ -94,11 +94,14 @@ pub(crate) fn init_early() {
 }
 
 pub(crate) fn init_percpu() {
-    use aarch64_cpu::registers::{CNTHCTL_EL2, CNTVOFF_EL2};
-    use tock_registers::interfaces::{ReadWriteable, Readable, Writeable};
-    // Disable EL1 timer traps and the timer offset.
-    CNTHCTL_EL2.modify(CNTHCTL_EL2::EL1PCEN::SET + CNTHCTL_EL2::EL1PCTEN::SET);
-    CNTVOFF_EL2.set(0);
+    #[cfg(all(not(feature = "irq"), feature = "hv"))]
+    {
+        use aarch64_cpu::registers::{CNTHCTL_EL2, CNTVOFF_EL2};
+        use tock_registers::interfaces::{ReadWriteable, Readable, Writeable};
+        // Disable EL1 timer traps and the timer offset.
+        CNTHCTL_EL2.modify(CNTHCTL_EL2::EL1PCEN::SET + CNTHCTL_EL2::EL1PCTEN::SET);
+        CNTVOFF_EL2.set(0);
+    }
 
     #[cfg(all(feature = "irq", not(feature = "hv")))]
     {
