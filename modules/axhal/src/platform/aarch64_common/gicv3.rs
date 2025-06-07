@@ -1,6 +1,9 @@
+extern crate alloc;
+
 use crate::{arch::disable_irqs, irq::IrqHandler, mem::phys_to_virt};
+use alloc::boxed::Box;
 use arm_gic_driver::*;
-use axconfig::devices::{GICC_PADDR, GICD_PADDR, GICR_PADDR, UART_IRQ};
+use axconfig::devices::{GICD_PADDR, GICR_PADDR, UART_IRQ};
 use core::ptr::NonNull;
 use kspin::SpinNoIrq;
 use memory_addr::PhysAddr;
@@ -20,21 +23,34 @@ pub const TIMER_IRQ_NUM: usize = arm_gic_driver::IntId::ppi(10).to_u32() as usiz
 pub const UART_IRQ_NUM: usize = arm_gic_driver::IntId::spi(UART_IRQ as u32).to_u32() as usize;
 
 const GICD_BASE: PhysAddr = pa!(GICD_PADDR);
-const GICC_BASE: PhysAddr = pa!(GICR_PADDR);
+const GICR_BASE: PhysAddr = pa!(GICR_PADDR);
 
 static GICD: SpinNoIrq<Option<arm_gic_driver::v3::Gic>> = SpinNoIrq::new(None);
-static GICC: SpinNoIrq<Option<Box<dyn InterfaceCPU>>> = SpinNoIrq::new(None);
+static GICR: SpinNoIrq<Option<Box<dyn arm_gic_driver::local::Interface>>> = SpinNoIrq::new(None);
 
 /// Enables or disables the given IRQ.
 pub fn set_enable(irq_num: usize, enabled: bool) {
-    trace!("GICD set enable: {} {}", irq_num, enabled);
+    use arm_gic_driver::local::cap::ConfigLocalIrq;
 
     let mut gicd = GICD.lock();
     let d = gicd.as_mut().unwrap();
-    if enabled {
-        d.irq_enable(irq_num.into());
+
+    if irq_num < 32 {
+        trace!("GICR set enable: {} {}", irq_num, enabled);
+
+        if enabled {
+            d.get_gicr().irq_enable(irq_num.into()).unwrap();
+        } else {
+            d.get_gicr().irq_disable(irq_num.into()).unwrap();
+        }
     } else {
-        d.irq_disable(irq_num.into());
+        trace!("GICD set enable: {} {}", irq_num, enabled);
+
+        if enabled {
+            d.irq_enable(irq_num.into()).unwrap();
+        } else {
+            d.irq_disable(irq_num.into()).unwrap();
+        }
     }
 }
 
@@ -49,7 +65,7 @@ pub fn register_handler(irq_num: usize, handler: IrqHandler) -> bool {
 
 /// Fetches the IRQ number.
 pub fn fetch_irq() -> usize {
-    GICC.lock()
+    GICR.lock()
         .as_mut()
         .unwrap()
         .ack()
@@ -65,37 +81,46 @@ pub fn fetch_irq() -> usize {
 pub fn dispatch_irq(irq_num: usize) {
     let intid: Option<IrqId>;
     if irq_num == 0 {
-        intid = GICC.lock().as_mut().unwrap().ack();
-        info!("interrupt {:?}", intid.unwrap());
+        intid = GICR.lock().as_mut().unwrap().ack();
+        trace!("interrupt {:?}", intid.unwrap());
     } else {
         intid = Some(IrqId::from(irq_num));
     }
     if let Some(intid) = intid {
         crate::irq::dispatch_irq_common(intid.into());
-        GICC.lock().as_mut().unwrap().eoi(intid);
+        GICR.lock().as_mut().unwrap().eoi(intid);
     }
 }
 
-/// Initializes GICD, GICC on the primary CPU.
+/// Initializes GICD, GICR on the primary CPU.
 pub(crate) fn init_primary() {
     info!("Initialize GICv3...");
-    let gicd = arm_gic_driver::v3::Gic::new(
+    let mut gicd = arm_gic_driver::v3::Gic::new(
         NonNull::new(phys_to_virt(GICD_BASE).as_mut_ptr()).unwrap(),
-        NonNull::new(phys_to_virt(GICC_BASE).as_mut_ptr()).unwrap(),
+        NonNull::new(phys_to_virt(GICR_BASE).as_mut_ptr()).unwrap(),
         arm_gic_driver::v3::Security::OneNS,
     );
-    let interface = gicd.cpu_interface();
+
+    debug!("Initializing GICD at {:#x}", GICD_BASE);
+    gicd.open().unwrap();
+
+    debug!(
+        "Initializing GICR for BSP. Global GICR base at {:#x}",
+        GICR_BASE
+    );
+    let mut interface = gicd.cpu_local().unwrap();
+    interface.open().unwrap();
 
     GICD.lock().replace(gicd);
-    GICC.lock().replace(interface);
+    GICR.lock().replace(interface);
 
     disable_irqs();
 }
 
-/// Initializes GICC on secondary CPUs.
+/// Initializes GICR on secondary CPUs.
 #[cfg(feature = "smp")]
 pub(crate) fn init_secondary() {
-    let interface = GICD.lock().as_mut().unwrap().cpu_interface();
-    GICC.lock().replace(interface);
-    GICC.lock().as_mut().unwrap().setup();
+    let mut interface = GICD.lock().as_mut().unwrap().cpu_local().unwrap();
+    interface.open().unwrap();
+    GICR.lock().replace(interface);
 }
