@@ -15,8 +15,8 @@ fn main() {
 
     println!("Current monotonic time: {:?}", ax_monotonic_time());
 
-    for _ in 0..100 {
-        modules::axtask::sleep(Duration::from_millis(100));
+    loop {
+        modules::axtask::sleep(Duration::from_millis(500));
         println!("Current monotonic time: {:?}", ax_monotonic_time());
     }
 }
