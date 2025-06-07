@@ -68,8 +68,8 @@ riscv_goldfish = { version = "0.1", optional = true }
 [target.'cfg(target_arch = "aarch64")'.dependencies]
 aarch64-cpu = "10.0"
 tock-registers = "0.9"
+arm-gic-driver = { git = "https://github.com/rcore-os/arm-gic-driver", rev = "ad1fddc194f1cf5b7602e7f35a7136f823465cb0" }
 arm_gicv2 = { git = "https://github.com/arceos-hypervisor/arm_gicv2", branch = "debin/2vm_timer" }
-arm-gic-driver = "0.10.2"
 crate_interface = { version = "0.1.3", optional = true }
 arm_pl011 = "0.1"
 arm_pl031 = { version = "0.2", optional = true }

@@ -30,6 +30,8 @@ members = [
     "examples/httpserver",
     "examples/httpserver",
     "examples/shell",
+
+    "examples/gicv3_tester",
 ]
 
 [workspace.package]

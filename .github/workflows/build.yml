@@ -20,6 +20,9 @@ jobs:
         components: rust-src, clippy, rustfmt
         targets: x86_64-unknown-none, riscv64gc-unknown-none-elf, aarch64-unknown-none, aarch64-unknown-none-softfloat, loongarch64-unknown-none
     - uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: cargo-bin-cache
+        cache-targets: false
     - name: Check rust version
       run: rustc --version --verbose
     - name: Check code format
@@ -52,6 +55,9 @@ jobs:
         components: rust-src, llvm-tools
         targets: x86_64-unknown-none, riscv64gc-unknown-none-elf, aarch64-unknown-none, aarch64-unknown-none-softfloat, loongarch64-unknown-none
     - uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: cargo-bin-cache
+        cache-targets: false
     - run: cargo install cargo-binutils
     - name: Build helloworld
       continue-on-error: ${{ matrix.rust-toolchain == 'nightly' }}
@@ -66,7 +72,7 @@ jobs:
       continue-on-error: ${{ matrix.rust-toolchain == 'nightly' }}
       run: make ARCH=${{ matrix.arch }} A=examples/shell
 
-    - uses: ./.github/workflows/actions/setup-musl
+    - uses: arceos-org/setup-musl@v1
       with:
         arch: ${{ matrix.arch }}
     - name: Build helloworld-c
@@ -86,6 +92,8 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         rust-toolchain: [nightly, nightly-2024-12-25]
+    env:
+      RUSTUP_TOOLCHAIN: ${{ matrix.rust-toolchain }}
     steps:
     - uses: actions/checkout@v4
     - uses: dtolnay/rust-toolchain@stable
@@ -94,6 +102,9 @@ jobs:
         components: rust-src, llvm-tools
         targets: x86_64-unknown-none, riscv64gc-unknown-none-elf, aarch64-unknown-none, aarch64-unknown-none-softfloat, loongarch64-unknown-none
     - uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: cargo-bin-cache
+        cache-targets: false
     - run: cargo install cargo-binutils
     - name: Build helloworld for x86_64-pc-oslab
       continue-on-error: ${{ matrix.rust-toolchain == 'nightly' }}
@@ -126,7 +137,7 @@ jobs:
       continue-on-error: ${{ matrix.rust-toolchain == 'nightly' }}
       run: make PLATFORM=aarch64-phytium-pi A=examples/helloworld SMP=4
 
-    - uses: ./.github/workflows/actions/setup-musl
+    - uses: arceos-org/setup-musl@v1
       with:
         arch: x86_64
     - run: make PLATFORM=x86_64-pc-oslab defconfig
