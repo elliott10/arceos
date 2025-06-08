@@ -3,3 +3,4 @@ deptool/target
 deptool/output.txt
 bwbench_client/target
 bwbench_client/Cargo.lock
+rk3588/

@@ -124,7 +124,8 @@ pub fn flush_tlb(vaddr: Option<VirtAddr>) {
             // flush the entire TLB
             #[cfg(not(feature = "hv"))]
             {
-                asm!("tlbi vmalle1; dsb sy; isb")
+                // TODO: fix this, it will get stuck on rk3588.
+                // asm!("tlbi vmalle1; dsb sy; isb")
             }
             #[cfg(feature = "hv")]
             {
