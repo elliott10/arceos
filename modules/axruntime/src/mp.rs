@@ -21,6 +21,8 @@ pub fn start_secondary_cpus(primary_cpu_id: usize) {
             axhal::mp::start_secondary_cpu(i, stack_top);
             logic_cpu_id += 1;
 
+            debug!("waiting for CPU {} to boot", logic_cpu_id);
+
             while ENTERED_CPUS.load(Ordering::Acquire) <= logic_cpu_id {
                 core::hint::spin_loop();
             }

@@ -5,6 +5,8 @@ use tock_registers::interfaces::{ReadWriteable, Readable, Writeable};
 
 use axconfig::{TASK_STACK_SIZE, plat::PHYS_VIRT_OFFSET};
 
+const CACHE_LINE_SIZE: usize = 64;
+
 #[unsafe(link_section = ".bss.stack")]
 static mut BOOT_STACK: [u8; TASK_STACK_SIZE] = [0; TASK_STACK_SIZE];
 
@@ -17,6 +19,26 @@ static mut BOOT_PT_L1: [A64PTE; 512] = [A64PTE::empty(); 512];
 const FLAG_LE: usize = 0b0;
 const FLAG_PAGE_SIZE_4K: usize = 0b10;
 const FLAG_ANY_MEM: usize = 0b1000;
+
+#[inline(always)]
+unsafe fn flush_page_table_cache(addr: usize, size: usize) {
+    use core::arch::asm;
+    let mut ptr = addr & !(CACHE_LINE_SIZE - 1);
+    let end = addr + size;
+
+    while ptr < end {
+        // Clean + Invalidate D-cache line to PoC (point of coherency)
+        asm!(
+            "dc civac, {0}",
+            in(reg) ptr,
+            options(nostack, preserves_flags),
+        );
+        ptr += CACHE_LINE_SIZE;
+    }
+
+    // 数据屏障，确保写回完成并被看到
+    asm!("dsb ish", "isb", options(nostack, preserves_flags));
+}
 
 #[cfg(not(feature = "hv"))]
 unsafe fn switch_to_el1() {
@@ -83,6 +105,10 @@ unsafe fn init_mmu() {
     TCR_EL1.write(TCR_EL1::IPS::Bits_48 + tcr_flags0 + tcr_flags1);
     barrier::isb(barrier::SY);
 
+    // Flush the entire TLB
+    crate::arch::flush_tlb(None);
+    barrier::dsb(barrier::SY);
+
     // Set both TTBR0 and TTBR1
     let root_paddr = pa!(&raw const BOOT_PT_L0 as usize).as_usize() as _;
     TTBR0_EL1.set(root_paddr);
@@ -105,6 +131,9 @@ unsafe fn enable_fp() {
 
 unsafe fn init_boot_page_table() {
     crate::platform::mem::init_boot_page_table(addr_of_mut!(BOOT_PT_L0), addr_of_mut!(BOOT_PT_L1));
+
+    flush_page_table_cache(addr_of_mut!(BOOT_PT_L0) as usize, 4096);
+    flush_page_table_cache(addr_of_mut!(BOOT_PT_L1) as usize, 4096);
 }
 
 /// Kernel entry point with Linux image header.
@@ -192,6 +221,7 @@ unsafe extern "C" fn _start_secondary() -> ! {
 
             mov     sp, x0
             bl      {switch_to_el1}
+            bl      {init_boot_page_table} // This is extremely foolish, but I do not know how to handle cache coherency.
             bl      {init_mmu}
             bl      {enable_fp}
 
@@ -203,6 +233,7 @@ unsafe extern "C" fn _start_secondary() -> ! {
             blr     x8
             b      .",
             switch_to_el1 = sym switch_to_el1,
+            init_boot_page_table = sym init_boot_page_table,
             init_mmu = sym init_mmu,
             enable_fp = sym enable_fp,
             phys_virt_offset = const PHYS_VIRT_OFFSET,
