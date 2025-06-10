@@ -518,6 +518,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "axhvc"
+version = "0.1.0"
+source = "git+https://github.com/arceos-hypervisor/axhvc.git?branch=ivc#29ca8af1e2db294b9f266ec43a3989c36f2e23b4"
+dependencies = [
+ "axerrno",
+ "bit_field",
+ "numeric-enum-macro",
+]
+
+[[package]]
 name = "axio"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1178,6 +1188,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "ivc_tester"
+version = "0.1.0"
+dependencies = [
+ "axhvc",
+ "axstd",
+]
+
+[[package]]
 name = "ixgbe-driver"
 version = "0.1.0"
 source = "git+https://github.com/KuangjuX/ixgbe-driver.git?rev=8e5eb74#8e5eb741299d7d95c373ec745e39a1473fe84563"
@@ -1370,6 +1388,12 @@ checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
 ]
+
+[[package]]
+name = "numeric-enum-macro"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "300e4bdb6b46b592948e700ea1ef24a4296491f6a0ee722b258040abd15a3714"
 
 [[package]]
 name = "once_cell"
