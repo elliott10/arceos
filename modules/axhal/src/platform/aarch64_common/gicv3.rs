@@ -87,6 +87,7 @@ pub fn fetch_irq() -> usize {
 /// up in the IRQ handler table and calls the corresponding handler. If
 /// necessary, it also acknowledges the interrupt controller after handling.
 pub fn dispatch_irq(irq_num: usize) {
+    trace!("dispatch_irq: {}", irq_num);
     let intid: Option<IrqId>;
     if irq_num == 0 {
         intid = GICR.lock().as_mut().unwrap().ack();
