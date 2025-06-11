@@ -20,7 +20,16 @@ tls = ["alloc"]
 rtc = ["x86_rtc", "riscv_goldfish", "arm_pl031"]
 uspace = ["paging"]
 default = []
-hv = ["paging", "cortex-a", "percpu/arm-el2", "page_table_entry/arm-el2", "dep:crate_interface"]
+hv = [
+    "paging",
+    "cortex-a",
+    "percpu/arm-el2",
+    "page_table_entry/arm-el2",
+    "arm_gicv2/el2",
+    "arm_gicv2/hv",
+    "dep:crate_interface",
+]
+ipi = ["irq"]
 
 [dependencies]
 log = "=0.4.21"
@@ -41,6 +50,7 @@ axlog = { workspace = true }
 axconfig = { workspace = true }
 axalloc = { workspace = true, optional = true }
 cortex-a = { version = "8.1.1", optional = true }
+cpumask = { version = "0.1", optional = true }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 x86 = "0.52"
@@ -52,22 +62,18 @@ x86_rtc = { version = "0.1", optional = true }
 [target.'cfg(any(target_arch = "riscv32", target_arch = "riscv64"))'.dependencies]
 riscv = "0.12"
 sbi-rt = { version = "0.0.3", features = ["legacy"] }
+riscv_plic = { version = "0.1.0" }
 riscv_goldfish = { version = "0.1", optional = true }
 
 [target.'cfg(target_arch = "aarch64")'.dependencies]
 aarch64-cpu = "10.0"
 tock-registers = "0.9"
-arm-gic-driver = "0.10.2"
+arm-gic-driver = { git = "https://github.com/rcore-os/arm-gic-driver", rev = "ad1fddc194f1cf5b7602e7f35a7136f823465cb0" }
+arm_gicv2 = { git = "https://github.com/arceos-hypervisor/arm_gicv2", branch = "debin/2vm_timer" }
 crate_interface = { version = "0.1.3", optional = true }
 arm_pl011 = "0.1"
 arm_pl031 = { version = "0.2", optional = true }
 dw_apb_uart = "0.1"
-
-[target.'cfg(all(target_arch = "aarch64", not(feature = "gicv3"), feature = "hv"))'.dependencies]
-arm_gicv2 = { git = "https://github.com/arceos-hypervisor/arm_gicv2", features = ["el2"] }
-
-[target.'cfg(all(target_arch = "aarch64", not(feature = "gicv3"), not(feature = "hv")))'.dependencies]
-arm_gicv2 = { git = "https://github.com/arceos-hypervisor/arm_gicv2" }
 
 [target.'cfg(target_arch = "loongarch64")'.dependencies]
 loongArch64 = "0.2.4"

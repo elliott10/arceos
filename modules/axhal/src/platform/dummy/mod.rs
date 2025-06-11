@@ -88,6 +88,15 @@ pub mod irq {
     pub fn fetch_irq() -> usize {
         0
     }
+
+    #[cfg(feature = "ipi")]
+    pub const IPI_IRQ_NUM: usize = 0;
+
+    #[cfg(feature = "ipi")]
+    pub fn send_sgi_one(dest_cpu: usize, irq_num: usize) {}
+
+    #[cfg(feature = "ipi")]
+    pub fn send_sgi_all(irq_num: usize) {}
 }
 
 /// Initializes the platform devices for the primary CPU.

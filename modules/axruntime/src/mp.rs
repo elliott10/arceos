@@ -44,6 +44,9 @@ pub extern "C" fn rust_main_secondary(cpu_id: usize) -> ! {
     #[cfg(feature = "multitask")]
     axtask::init_scheduler_secondary();
 
+    #[cfg(feature = "ipi")]
+    axipi::init();
+
     info!("Secondary CPU {:x} init OK.", cpu_id);
     super::INITED_CPUS.fetch_add(1, Ordering::Relaxed);
 

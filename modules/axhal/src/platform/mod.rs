@@ -34,5 +34,7 @@ cfg_if::cfg_if! {
     } else {
         mod dummy;
         pub use self::dummy::*;
+        // mod riscv64_qemu_virt;
+        // pub use self::riscv64_qemu_virt::*;
     }
 }

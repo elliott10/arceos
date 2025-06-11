@@ -108,16 +108,18 @@ pub(crate) fn init_percpu() {
         CNTP_CTL_EL0.write(CNTP_CTL_EL0::ENABLE::SET);
         CNTP_TVAL_EL0.set(0);
     }
-    // #[cfg(all(feature = "irq", feature = "hv"))]
-    // {
-    //     unsafe {
-    //         // ENABLE, bit [0], Enables the timer.
-    //         // * 0b0: Timer disabled.
-    //         // * 0b1: Timer enabled.
-    //         core::arch::asm!("msr CNTHP_CTL_EL2, {0:x}", in(reg) 0b1);
-    //         core::arch::asm!("msr CNTHP_TVAL_EL2, {0:x}", in(reg) 0);
-    //     }
-    // }
+    #[cfg(all(feature = "irq", feature = "hv"))]
+    {
+        // `arm_vcpu` will set `CNTVOFF_EL2` and `CNTHCTL_EL2` later.
+
+        unsafe {
+            // ENABLE, bit [0], Enables the timer.
+            // * 0b0: Timer disabled.
+            // * 0b1: Timer enabled.
+            // core::arch::asm!("msr CNTHP_CTL_EL2, {0:x}", in(reg) 0b1);
+            // core::arch::asm!("msr CNTHP_TVAL_EL2, {0:x}", in(reg) 0);
+        }
+    }
     #[cfg(feature = "irq")]
     crate::platform::irq::set_enable(crate::platform::irq::TIMER_IRQ_NUM, true);
 }

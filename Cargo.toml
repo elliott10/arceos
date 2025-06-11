@@ -16,6 +16,7 @@ members = [
     "modules/axruntime",
     "modules/axsync",
     "modules/axtask",
+    "modules/axipi",
 
     "api/axfeat",
     "api/arceos_api",
@@ -29,6 +30,8 @@ members = [
     "examples/httpserver",
     "examples/httpserver",
     "examples/shell",
+
+    "examples/gicv3_tester",
 ]
 
 [workspace.package]
@@ -64,6 +67,7 @@ axruntime = { path = "modules/axruntime" }
 axsync = { path = "modules/axsync" }
 axtask = { path = "modules/axtask" }
 axdma = { path = "modules/axdma" }
+axipi = { path = "modules/axipi" }
 
 allocator = { git = "https://github.com/arceos-org/allocator.git", tag = "v0.1.1" }
 

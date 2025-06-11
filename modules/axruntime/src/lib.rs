@@ -260,6 +260,12 @@ fn init_interrupt() {
         axtask::on_timer_tick();
     });
 
+    #[cfg(feature = "ipi")]
+    {
+        axipi::init();
+        axhal::irq::register_handler(axhal::irq::IPI_IRQ_NUM, axipi::ipi_handler);
+    }
+
     // Enable IRQs before starting app
     axhal::arch::enable_irqs();
 }

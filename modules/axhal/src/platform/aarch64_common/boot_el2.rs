@@ -43,6 +43,10 @@ unsafe fn init_mmu_el2() {
     // * Virtual IRQ interrupts are enabled;
     // * Physical FIQ interrupts are taken to EL2;
     // * Virtual FIQ interrupts are enabled.
+    //
+    // To passthrough IRQs to EL1, disable `HCR_EL2::IMO::EnableVirtualIRQ` and
+    // `HCR_EL2::FMO::EnableVirtualFIQ`, which can be done in `arm_vcpu`.
+    // `HCR_EL2` here is used only outside of guest VMs.
     HCR_EL2.modify(
         HCR_EL2::VM::Enable
             + HCR_EL2::RW::EL1IsAarch64

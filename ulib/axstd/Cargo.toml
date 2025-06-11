@@ -27,6 +27,7 @@ fp_simd = ["axfeat/fp_simd"]
 
 # Interrupts
 irq = ["arceos_api/irq", "axfeat/irq"]
+ipi = ["arceos_api/ipi", "axfeat/ipi"]
 gicv3 = ["axfeat/gicv3","alloc"]
 
 # Memory
@@ -69,7 +70,7 @@ driver-fxmac = ["axfeat/driver-fxmac"]
 driver-bcm2835-sdhci = ["axfeat/driver-bcm2835-sdhci"]
 
 # Hypervisor support
-hv = ["axfeat/hv"]
+hv = ["axfeat/hv", "axfeat/ipi", "arceos_api/ipi"]
 
 # Logging
 log-level-off = ["axfeat/log-level-off"]
