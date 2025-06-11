@@ -11,6 +11,12 @@ pub(crate) fn default_rk3588j_regions() -> impl Iterator<Item = MemRegion> {
             name: "reserved memory",
         },
         MemRegion {
+            paddr: PhysAddr::from(0x1_0000_0000),
+            size: 0xf000_0000,
+            flags: MemRegionFlags::RESERVED | MemRegionFlags::READ | MemRegionFlags::WRITE,
+            name: "reserved memory",
+        },
+        MemRegion {
             paddr: PhysAddr::from(0x1f0000000),
             size: 0x10000000,
             flags: MemRegionFlags::FREE | MemRegionFlags::READ | MemRegionFlags::WRITE,
