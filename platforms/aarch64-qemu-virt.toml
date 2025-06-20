@@ -19,6 +19,7 @@ phys-virt-offset = "0xffff_0000_0000_0000"
 # MMIO regions with format (`base_paddr`, `size`).
 mmio-regions = [
     ["0x0900_0000", "0x1000"],      # PL011 UART
+    ["0x0903_0000", "0x1000"],      # GPIO pl061
     ["0x0800_0000", "0x2_0000"],    # GICv2
     ["0x0a00_0000", "0x4000"],      # VirtIO
     ["0x1000_0000", "0x2eff_0000"],     # PCI memory ranges (ranges 1: 32-bit MMIO space)
@@ -72,6 +73,9 @@ pci-ranges = [
 # UART Address
 uart-paddr = "0x0900_0000"
 uart-irq = "1"
+
+# GPIO pl061
+gpio-paddr = "0x903_0000"
 
 # GICC Address
 gicc-paddr = "0x0801_0000"

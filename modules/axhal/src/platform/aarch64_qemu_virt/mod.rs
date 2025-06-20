@@ -20,6 +20,9 @@ pub mod misc {
     pub use crate::platform::aarch64_common::psci::system_off as terminate;
 }
 
+/// GPIO驱动
+pub mod pl061;
+
 extern "C" {
     fn exception_vector_base();
     fn rust_main(cpu_id: usize, dtb: usize);
@@ -53,6 +56,9 @@ pub fn platform_init() {
     super::aarch64_common::gic::init_primary();
     super::aarch64_common::generic_timer::init_percpu();
     super::aarch64_common::pl011::init();
+
+    #[cfg(feature = "irq")]
+    super::pl061::gpio_init();
 }
 
 /// Initializes the platform devices for secondary CPUs.
