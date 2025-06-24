@@ -178,11 +178,11 @@ pub fn add_en_interrupt(id: usize) {
 
 pub fn show_en_interrupt() {
     let set = INTERRUPT_EN_SET.lock();
-    debug!("en irq set: ");
+    debug!("show en irq set: [");
     for irq in set.iter() {
         debug!("{} ", irq);
     }
-    debug!("\n");
+    debug!("]\n");
 }
 
 pub fn gic_prio_reg(int_id: usize) -> usize {
@@ -1313,7 +1313,7 @@ pub fn gic_get_act(int_id: usize) -> bool {
 }
 
 pub fn gic_set_enable(int_id: usize, en: bool) {
-    debug!("To enable gic: {} int={}", en, int_id);
+    debug!("CPU {} {} enable gic, int={}", get_cpu_id(), en, int_id);
     if !gic_is_priv(int_id) {
         GICD.set_enable(int_id, en);
     } else {
