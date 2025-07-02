@@ -158,7 +158,10 @@ unsafe extern "C" fn _start_secondary() -> ! {
         // Uart0 = 0xfeb50000
         mov x9, #0x0
         movk x9, #0xfeb5, lsl #16
+
+        lsr x19, x19, #8
         // ID Hi
+
         add x10, x19, #48
         str x10, [x9]
         mov x10, #72
