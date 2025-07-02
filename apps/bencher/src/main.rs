@@ -117,6 +117,18 @@ fn bench_switch(iter: u64) {
     thread::spawn(move || {
         for i in 0..iter / 2 {
             //println!("1 THREAD, switch {}", i);
+
+        /*
+        #[cfg(not(feature = "qemu"))]
+        {
+            let GPIO3: usize = 0xffff_0000_fec40000;
+            // Turn off all LEDs
+            dw_apb_uart::DW8250::gpio_output_clear(GPIO3);
+            // LED RED
+            dw_apb_uart::DW8250::gpio_output(GPIO3, 10, true);
+        }
+        */
+
             thread::yield_now();
         }
     });
@@ -136,6 +148,17 @@ fn bench_switch(iter: u64) {
 
         let cpu_cycle_end = cycle::cpu_cycle();
         let tsc_end = now_tsc();
+
+        /*
+        #[cfg(not(feature = "qemu"))]
+        {
+            let GPIO3: usize = 0xffff_0000_fec40000;
+            // Turn off all LEDs
+            dw_apb_uart::DW8250::gpio_output_clear(GPIO3);
+            // LED Green
+            dw_apb_uart::DW8250::gpio_output(GPIO3, 16, true);
+        }
+        */
 
         let cpu_cycle = cpu_cycle_end - cpu_cycle_start;
         let tsc = tsc_end - tsc_start;

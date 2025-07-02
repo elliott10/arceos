@@ -13,17 +13,21 @@ pub const TIMER_IRQ_NUM: usize = translate_irq(14, InterruptType::PPI).unwrap();
 pub const UART_IRQ_NUM: usize = translate_irq(axconfig::UART_IRQ, InterruptType::SPI).unwrap();
 
 #[cfg(not(feature = "gicv3"))]
-use arm_gic::gic_v2::{GicDistributor, GicCpuInterface};
+use arm_gic::gic_v2::{GicCpuInterface, GicDistributor};
 
-use arm_gic::gic_v3::{GICD, gicc_get_current_irq, gicc_clear_current_irq, gic_glb_init, gic_cpu_init};
-
-#[cfg(not(feature = "gicv3"))]
-    static GICD: SpinNoIrq<GicDistributor> =
-        SpinNoIrq::new(GicDistributor::new(phys_to_virt(PhysAddr::from(axconfig::GICD_PADDR)).as_mut_ptr()));
+use arm_gic::gic_v3::{
+    gic_cpu_init, gic_glb_init, gicc_clear_current_irq, gicc_get_current_irq, GICD,
+};
 
 #[cfg(not(feature = "gicv3"))]
-    // per-CPU, no lock
-    static GICC: GicCpuInterface = GicCpuInterface::new(phys_to_virt(PhysAddr::from(axconfig::GICC_PADDR)).as_mut_ptr());
+static GICD: SpinNoIrq<GicDistributor> = SpinNoIrq::new(GicDistributor::new(
+    phys_to_virt(PhysAddr::from(axconfig::GICD_PADDR)).as_mut_ptr(),
+));
+
+#[cfg(not(feature = "gicv3"))]
+// per-CPU, no lock
+static GICC: GicCpuInterface =
+    GicCpuInterface::new(phys_to_virt(PhysAddr::from(axconfig::GICC_PADDR)).as_mut_ptr());
 
 #[cfg(feature = "gicv3")]
 #[used]
@@ -44,13 +48,16 @@ pub fn set_enable(irq_num: usize, enabled: bool) {
     }
 
     #[cfg(feature = "gicv3")]
-    {   
+    {
         use arm_gic::gic_v3::{gic_set_enable, gic_set_prio};
         use tock_registers::interfaces::Readable;
         gic_set_enable(irq_num, enabled);
         gic_set_prio(irq_num, 0x1);
-        GICD.set_route(irq_num, aarch64_cpu::registers::MPIDR_EL1.get() as usize);
-    }   
+
+        let mpidr_el1 = aarch64_cpu::registers::MPIDR_EL1.get() as usize;
+        debug!("GICD set route irq {} to CPU {:#x}", irq_num, mpidr_el1);
+        GICD.set_route(irq_num, mpidr_el1);
+    }
 }
 
 /// Send ipi to cpu
@@ -64,7 +71,7 @@ pub fn ipi_send(cpu_id: usize, ipi_id: usize) {
         #[cfg(feature = "gicv3")]
         GICD.send_sgi(cpu_id, ipi_id);
     }
-}   
+}
 
 /// Registers an IRQ handler for the given IRQ.
 ///
@@ -88,6 +95,7 @@ pub fn dispatch_irq(_unused: usize) {
     if let Some(id) = gicc_get_current_irq() {
         trace!("Got irq: {}", id);
         if id >= 1022 {
+            warn!("unknown irq: {}", id);
             return;
         }
         // let begin = time_current_us();
@@ -96,7 +104,7 @@ pub fn dispatch_irq(_unused: usize) {
         // let end = time_current_us();
 
         gicc_clear_current_irq(id as u32, handled_by_hypervisor);
-    }   
+    }
 }
 
 /// Initializes GICD, GICC on the primary CPU.
@@ -112,7 +120,7 @@ pub(crate) fn init_primary() {
     {
         info!("Initialize GICv3...");
 
-        //if current_cpu().id == 0 
+        //if current_cpu().id == 0
         gic_glb_init();
 
         gic_cpu_init();
@@ -126,5 +134,8 @@ pub(crate) fn init_secondary() {
     GICC.init();
 
     #[cfg(feature = "gicv3")]
-    gic_cpu_init();
+    {
+        debug!("Init GICC on secondary CPU");
+        gic_cpu_init();
+    }
 }

@@ -116,6 +116,35 @@ pub fn flush_dcache_line(vaddr: VirtAddr) {
     unsafe { asm!("dc ivac, {0:x}; dsb sy; isb", in(reg) vaddr.as_usize()) };
 }
 
+/// Invalidate all D-Cache, to Point of Unification, Inner Sharable
+/// D-Cache will be retrieved from memory again
+#[inline]
+pub fn invalidate_all_dcache() {
+    unsafe { asm!("DC IALLUIS; dsb sy; isb") };
+}
+
+/// Clean and Invalidate D-Cache by Virtual Address to Point of Coherency
+/// The D-Cache content will be stored in memory
+#[inline]
+pub fn  clean_and_inval_dcache_range(addr: u64, len: u64) {
+    const CACHE_LINE_ADDR_MASK: u64 = 0x3F;
+    const CACHE_LINE: u64 = 64;
+
+    let end: u64 = addr + len;
+    let mut adr = addr & (!CACHE_LINE_ADDR_MASK);
+
+    if len != 0 {
+        while (adr < end) {
+            // clean and invalidate data cache
+            unsafe{ asm!("DC CIVAC, {}", in(reg) adr) };
+            adr += CACHE_LINE;
+        }
+    }
+    // Wait for Clean to complete
+    //unsafe { asm!("dsb sy") };
+    unsafe { asm!("dsb sy; isb") };
+}
+
 /// Reads the thread pointer of the current CPU.
 ///
 /// It is used to implement TLS (Thread Local Storage).

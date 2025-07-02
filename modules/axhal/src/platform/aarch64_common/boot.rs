@@ -87,6 +87,9 @@ unsafe fn init_mmu() {
 
     // Enable the MMU and turn on I-cache and D-cache
     SCTLR_EL1.modify(SCTLR_EL1::M::Enable + SCTLR_EL1::C::Cacheable + SCTLR_EL1::I::Cacheable);
+
+    crate::arch::flush_icache_all();
+    crate::arch::clean_and_inval_dcache_range(axconfig::KERNEL_BASE_VADDR as u64, 1024*1024);
     barrier::isb(barrier::SY);
 }
 
@@ -151,6 +154,19 @@ unsafe extern "C" fn _start_secondary() -> ! {
     core::arch::asm!("
         mrs     x19, mpidr_el1
         and     x19, x19, #0xffffff     // get current CPU id
+
+        // Uart0 = 0xfeb50000
+        mov x9, #0x0
+        movk x9, #0xfeb5, lsl #16
+        // ID Hi
+        add x10, x19, #48
+        str x10, [x9]
+        mov x10, #72
+        str x10, [x9]
+        mov x10, #105
+        str x10, [x9]
+        mov x10, #10
+        str x10, [x9]
 
         mov     sp, x0
         bl      {switch_to_el1}

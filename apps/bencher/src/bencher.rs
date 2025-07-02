@@ -151,12 +151,12 @@ impl Bencher {
         if self.count == 0 {
             return;
         }
-        println!("  Benchmark last seconds: {} s", self.sum_tsc / timer_freq());
+        println!("  Benchmark total duration: {} s", self.sum_tsc / timer_freq());
         // println!("  Max Timer cycles: {}", self.max_tsc);
         //println!("  Average Timer cycles: {}", div_round(self.sum_tsc, self.count));
 
         println!(
-            "  Average nanoseconds: {} ns",
+            "  Average timer nanoseconds: {} ns",
             div_round(ticks_to_nanos(self.sum_tsc), self.count)
         );
 

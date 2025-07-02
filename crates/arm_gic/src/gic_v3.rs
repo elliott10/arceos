@@ -1313,7 +1313,7 @@ pub fn gic_get_act(int_id: usize) -> bool {
 }
 
 pub fn gic_set_enable(int_id: usize, en: bool) {
-    debug!("CPU {} {} enable gic, int={}", get_cpu_id(), en, int_id);
+    debug!("CPU [{}]@{:#x} {} enable gic, int={}", get_cpu_id(), read_mpidr(), en, int_id);
     if !gic_is_priv(int_id) {
         GICD.set_enable(int_id, en);
     } else {

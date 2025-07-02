@@ -234,6 +234,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "arm_gic"
+version = "0.1.0"
+source = "git+https://github.com/elliott10/arm_gic.git#e298a443bd743bfab77ec73a3554f53f56113bd3"
+dependencies = [
+ "cfg-if",
+ "lazy_static",
+ "log",
+ "spin",
+ "tock-registers",
+]
+
+[[package]]
 name = "arm_pl011"
 version = "0.1.0"
 dependencies = [
@@ -380,7 +392,7 @@ name = "axhal"
 version = "0.1.0"
 dependencies = [
  "aarch64-cpu",
- "arm_gic",
+ "arm_gic 0.1.0 (git+https://github.com/elliott10/arm_gic.git)",
  "arm_pl011",
  "axalloc",
  "axconfig",

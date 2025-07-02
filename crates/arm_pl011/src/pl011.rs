@@ -19,6 +19,7 @@ register_structs! {
         /// Flag Register.
         (0x18 => fr: ReadOnly<u32>),
         (0x1c => _reserved1),
+        (0x2c => lcr: ReadWrite<u32>),
         /// Control register.
         (0x30 => cr: ReadWrite<u32>),
         /// Interrupt FIFO Level Select Register.
@@ -71,6 +72,9 @@ impl Pl011Uart {
 
         // set fifo trigger level
         self.regs().ifls.set(0); // 1/8 rxfifo, 1/8 txfifo.
+
+        // disable fifo
+        // self.regs().lcr.set(self.regs().lcr.get() & !(1<<4));
 
         // enable rx interrupt
         self.regs().imsc.set(1 << 4); // rxim
