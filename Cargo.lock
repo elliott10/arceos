@@ -185,6 +185,7 @@ dependencies = [
 [[package]]
 name = "arm_gic"
 version = "0.1.0"
+source = "git+https://github.com/elliott10/arm_gic.git#e298a443bd743bfab77ec73a3554f53f56113bd3"
 dependencies = [
  "cfg-if",
  "lazy_static",
@@ -951,7 +952,7 @@ dependencies = [
 [[package]]
 name = "fxmac_rs"
 version = "0.2.0"
-source = "git+https://github.com/elliott10/fxmac_rs.git?rev=638b02fa#638b02faea0d1178fdd967f9e356f2e7f496c3f2"
+source = "git+https://github.com/elliott10/fxmac_rs.git?rev=0dbc3916#0dbc3916d5d5a0086916deda0c4c2dd8651c69ce"
 dependencies = [
  "aarch64-cpu 10.0.0",
  "crate_interface",

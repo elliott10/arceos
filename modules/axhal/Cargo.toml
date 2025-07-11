@@ -55,7 +55,7 @@ riscv_goldfish = { version = "0.1", optional = true }
 aarch64-cpu = "9.4"
 tock-registers = "0.8"
 arm_gicv2 = "0.1"
-arm_gic = { path = "../../crates/arm_gic" }
+arm_gic = { git = "https://github.com/elliott10/arm_gic.git" }
 arm_pl011 = "0.1"
 arm_pl031 = { version = "0.2", optional = true }
 dw_apb_uart = "0.1"

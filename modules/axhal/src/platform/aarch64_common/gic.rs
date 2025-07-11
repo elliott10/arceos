@@ -75,7 +75,7 @@ pub fn ipi_send(cpu_id: usize, ipi_id: usize) {
 /// It also enables the IRQ if the registration succeeds. It returns `false` if
 /// the registration failed.
 pub fn register_handler(irq_num: usize, handler: IrqHandler) -> bool {
-    trace!("register handler irq {}", irq_num);
+    debug!("register handler irq {}", irq_num);
     crate::irq::register_handler_common(irq_num, handler)
 }
 

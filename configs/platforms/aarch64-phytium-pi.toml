@@ -40,6 +40,8 @@ mmio-regions = [
     [0x2800_E000, 0x1000],  # UART 2
     [0x2800_F000, 0x1000],  # UART 3
 
+    [0x2804_0000, 0x4000],  # watchdog
+
     #[0x3080_0000, 0x100000],  # gic 3
     #[0x3200c000, 0x2000],  # ethernet0, Cadence GEM, irq=92, PHY: YT8521
     #[0x3200e000, 0x2000],  # ethernet1, Cadence GEM, irq=100, PHY: YT8521
@@ -78,6 +80,13 @@ pci-ranges = [
 uart-paddr = 0x2800_D000        # uint
 # UART IRQ number
 uart-irq = 0x54                 # uint
+
+# watchdog
+wdt0-paddr = 0x28040000
+wdt0-irq = 0xa4
+
+wdt1-paddr = 0x28042000
+wdt1-irq = 0xa5
 
 # GIC CPU Interface base address
 gicc-paddr = 0x30840000

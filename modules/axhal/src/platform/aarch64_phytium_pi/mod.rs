@@ -1,4 +1,5 @@
 pub mod mem;
+pub mod sbsa_gwdt;
 
 #[cfg(feature = "smp")]
 pub mod mp;
@@ -62,6 +63,9 @@ pub fn platform_init() {
     super::aarch64_common::gic::init_primary();
     super::aarch64_common::generic_timer::init_percpu();
     super::aarch64_common::pl011::init();
+
+use crate::platform::sbsa_gwdt;
+    sbsa_gwdt::watchdog_init();
 }
 
 /// Initializes the platform devices for secondary CPUs.

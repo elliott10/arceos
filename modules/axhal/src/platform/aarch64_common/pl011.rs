@@ -71,11 +71,10 @@ pub fn handle() {
 
     debug!("UART pl011 IRQ Handler");
 
-    /*
+    // 通过读取字符来清楚UART中断
     if is_receive_interrupt {
         while let Some(c) = getchar() {
             putchar(c);
         }
     }
-    */
 }
