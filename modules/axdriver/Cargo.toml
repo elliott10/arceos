@@ -17,6 +17,7 @@ dyn = []
 bus-mmio = []
 bus-pci = ["dep:axdriver_pci", "dep:axhal", "dep:axconfig"]
 block = ["axdriver_block"]
+gpt = ["dep:gpt_disk_io"]
 display = ["axdriver_display"]
 input = ["axdriver_input"]
 net = ["axdriver_net"]
@@ -33,7 +34,7 @@ virtio-net = ["net", "virtio", "axdriver_virtio/net"]
 virtio-socket = ["vsock", "virtio", "axdriver_virtio/socket"]
 bcm2835-sdhci = ["block", "axdriver_block/bcm2835-sdhci"]
 ramdisk = ["block", "axdriver_block/ramdisk", "dep:axhal", "dep:axconfig"]
-sdmmc = ["block", "axdriver_block/sdmmc", "dep:axhal", "dep:axconfig"]
+sdmmc = ["block", "gpt", "axdriver_block/sdmmc", "dep:axhal", "dep:axconfig"]
 ixgbe = ["net", "axdriver_net/ixgbe", "dep:axalloc", "dep:axhal", "dep:axdma"]
 fxmac = ["net", "axdriver_net/fxmac", "dep:axalloc", "dep:axhal", "dep:axdma"]
 # more devices example: e1000 = ["net", "axdriver_net/e1000"]
@@ -53,6 +54,7 @@ axdriver_pci = { version = "0.1", git = "https://github.com/arceos-org/axdriver_
 axdriver_vsock = { version = "0.1", git = "https://github.com/arceos-org/axdriver_crates.git", tag = "dev-v01", optional = true }
 axdriver_virtio = { version = "0.1", git = "https://github.com/arceos-org/axdriver_crates.git", tag = "dev-v01", optional = true }
 
+gpt_disk_io = { version = "0.16.2", optional = true }
 cfg-if = { workspace = true }
 crate_interface = { workspace = true }
 log = { workspace = true }

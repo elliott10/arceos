@@ -80,6 +80,9 @@ mod virtio;
 #[cfg(feature = "ixgbe")]
 mod ixgbe;
 
+#[cfg(feature = "gpt")]
+mod gpt;
+
 pub mod prelude;
 
 #[allow(unused_imports)]

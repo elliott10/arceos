@@ -84,18 +84,22 @@ cfg_if::cfg_if! {
 cfg_if::cfg_if! {
     if #[cfg(block_dev = "sdmmc")] {
         use axhal::mem::phys_to_virt;
+        use axdriver_block::sdmmc::SdMmcDriver;
+        use super::gpt::GptPartitionDev;
 
-        pub struct SdMmcDriver;
-        register_block_driver!(SdMmcDriver, axdriver_block::sdmmc::SdMmcDriver);
+        pub struct SdMmcBlock;
+        register_block_driver!(SdMmcBlock, GptPartitionDev<SdMmcDriver>);
 
-        impl DriverProbe for SdMmcDriver {
+        impl DriverProbe for SdMmcBlock {
             fn probe_global() -> Option<AxDeviceEnum> {
+                let root = axconfig::devices::ROOT_PARTITION_NAME.parse().unwrap();
+                info!("Probe SD MMC ROOT Part: {:?} @ {:#x}", root, axconfig::devices::SDMMC_PADDR);
                 let sdmmc = unsafe {
-                    axdriver_block::sdmmc::SdMmcDriver::new(
+                        SdMmcDriver::new(
                         phys_to_virt(axconfig::devices::SDMMC_PADDR.into()).into(),
                     )
                 };
-                Some(AxDeviceEnum::from_block(sdmmc))
+                GptPartitionDev::new(sdmmc, |part| part.name == root).ok().map(AxDeviceEnum::from_block)
             }
         }
     }
