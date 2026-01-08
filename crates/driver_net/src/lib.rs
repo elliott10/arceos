@@ -9,6 +9,8 @@
 /// ixgbe NIC device driver.
 pub mod ixgbe;
 
+pub mod dwc_const;
+pub mod dwc_init;
 
 pub mod starfive;
 pub use starfive::*;

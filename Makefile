@@ -50,8 +50,8 @@ NET_DUMP ?= n
 NET_DEV ?= user
 
 # Network options
-IP ?= 10.0.2.15
-GW ?= 10.0.2.2
+IP ?= 192.168.10.104
+GW ?= 192.168.10.1
 
 # App type
 ifeq ($(wildcard $(APP)),)
