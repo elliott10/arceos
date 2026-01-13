@@ -212,3 +212,40 @@ cfg_if::cfg_if! {
         }
     }
 }
+
+cfg_if::cfg_if! {
+    if #[cfg(net_dev = "dwmac")] {
+        use crate::dwmac::DwmacHalImpl;
+        use core::ptr::NonNull;
+
+        pub struct DwmacDriver;
+        register_net_driver!(DwmacDriver, axdriver_net::dwmac::DwmacNic<DwmacHalImpl>);
+
+        impl DriverProbe for DwmacDriver {
+            #[cfg(bus = "mmio")]
+            fn probe_mmio(mmio_base: usize, mmio_size: usize) -> Option<AxDeviceEnum> {
+                // Try both GMAC0 and GMAC1 for tutorial
+                if mmio_base == axconfig::devices::ETHERNET1_PADDR {
+                    let gmac_name = "GMAC1";
+                    info!("DWMAC tutorial device found at {:#x} ({})", mmio_base, gmac_name);
+
+                    let base_ptr = unsafe {  core::ptr::NonNull::new_unchecked(axhal::mem::phys_to_virt(mmio_base.into()).as_mut_ptr()) };
+
+                    // Initialize the DWMAC device (clock verification is now informational only)
+                    match axdriver_net::dwmac::DwmacNic::<DwmacHalImpl>::init(base_ptr, mmio_size) {
+                        Ok(device) => {
+                            info!("✅ DWMAC tutorial device ({}) initialized successfully!", gmac_name);
+                            Some(AxDeviceEnum::Net(device))
+                        }
+                        Err(e) => {
+                            error!("❌ DWMAC tutorial device ({}) initialization failed: {}", gmac_name, e);
+                            None
+                        }
+                    }
+                } else {
+                    None
+                }
+            }
+        }
+    }
+}

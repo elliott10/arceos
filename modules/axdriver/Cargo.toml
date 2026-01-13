@@ -37,6 +37,7 @@ ramdisk = ["block", "axdriver_block/ramdisk", "dep:axhal", "dep:axconfig"]
 sdmmc = ["block", "gpt", "axdriver_block/sdmmc", "dep:axhal", "dep:axconfig"]
 ixgbe = ["net", "axdriver_net/ixgbe", "dep:axalloc", "dep:axhal", "dep:axdma"]
 fxmac = ["net", "axdriver_net/fxmac", "dep:axalloc", "dep:axhal", "dep:axdma"]
+dwmac = ["net", "axdriver_net/dwmac", "dep:axalloc", "dep:axhal", "dep:jh7110-vf2-13b-pac"]
 # more devices example: e1000 = ["net", "axdriver_net/e1000"]
 
 [dependencies]
@@ -45,17 +46,18 @@ axconfig = { workspace = true, optional = true }
 axdma = { workspace = true, optional = true }
 axhal = { workspace = true, optional = true }
 
-axdriver_base = { version = "0.1", git = "https://github.com/arceos-org/axdriver_crates.git", tag = "dev-v01" }
-axdriver_block = { version = "0.1", git = "https://github.com/arceos-org/axdriver_crates.git", tag = "dev-v01", optional = true }
-axdriver_display = { version = "0.1", git = "https://github.com/arceos-org/axdriver_crates.git", tag = "dev-v01", optional = true }
-axdriver_input = { version = "0.1", git = "https://github.com/arceos-org/axdriver_crates.git", tag = "dev-v01", optional = true }
-axdriver_net = { version = "0.1", git = "https://github.com/arceos-org/axdriver_crates.git", tag = "dev-v01", optional = true }
-axdriver_pci = { version = "0.1", git = "https://github.com/arceos-org/axdriver_crates.git", tag = "dev-v01", optional = true }
-axdriver_vsock = { version = "0.1", git = "https://github.com/arceos-org/axdriver_crates.git", tag = "dev-v01", optional = true }
-axdriver_virtio = { version = "0.1", git = "https://github.com/arceos-org/axdriver_crates.git", tag = "dev-v01", optional = true }
+axdriver_base = { version = "0.1", git = "https://github.com/elliott10/axdriver_crates.git", branch = "tag-dev-v01" }
+axdriver_block = { version = "0.1", git = "https://github.com/elliott10/axdriver_crates.git", branch = "tag-dev-v01", optional = true }
+axdriver_display = { version = "0.1", git = "https://github.com/elliott10/axdriver_crates.git", branch = "tag-dev-v01", optional = true }
+axdriver_input = { version = "0.1", git = "https://github.com/elliott10/axdriver_crates.git", branch = "tag-dev-v01", optional = true }
+axdriver_net = { version = "0.1", git = "https://github.com/elliott10/axdriver_crates.git", branch = "tag-dev-v01", optional = true }
+axdriver_pci = { version = "0.1", git = "https://github.com/elliott10/axdriver_crates.git", branch = "tag-dev-v01", optional = true }
+axdriver_vsock = { version = "0.1", git = "https://github.com/elliott10/axdriver_crates.git", branch = "tag-dev-v01", optional = true }
+axdriver_virtio = { version = "0.1", git = "https://github.com/elliott10/axdriver_crates.git", branch = "tag-dev-v01", optional = true }
 
 gpt_disk_io = { version = "0.16.2", optional = true }
 cfg-if = { workspace = true }
 crate_interface = { workspace = true }
 log = { workspace = true }
 smallvec = { version = "1.15.1", features = ["const_generics", "union"] }
+jh7110-vf2-13b-pac = { version = "0.2.0", optional = true }

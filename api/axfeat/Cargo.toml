@@ -76,6 +76,7 @@ driver-ramdisk = ["axdriver/ramdisk"]
 driver-sdmmc = ["axdriver/sdmmc"]
 driver-ixgbe = ["axdriver/ixgbe"]
 driver-fxmac = ["axdriver/fxmac"] # fxmac ethernet driver for PhytiumPi
+driver-dwmac = ["axdriver/dwmac"] # dwmac ethernet driver for StarFive VisionFive 2
 driver-bcm2835-sdhci = ["axdriver/bcm2835-sdhci"]
 
 # Logging

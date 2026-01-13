@@ -100,5 +100,10 @@ macro_rules! for_each_drivers {
             type $drv_type = crate::drivers::FXmacDriver;
             $code
         }
+        #[cfg(net_dev = "dwmac")]
+        {
+            type $drv_type = crate::drivers::DwmacDriver;
+            $code
+        }
     }};
 }
