@@ -234,6 +234,7 @@ impl<A: StarfiveHal> StarfiveNic<A> {
 
         crate::dwc_init::dwmac4_core_init();
         crate::dwc_init::dwmac_mtl_queue_set();
+
         crate::dwc_init::dwmac4_flow_ctrl();
         crate::dwc_init::dma_start_rxtx();
         crate::dwc_init::stmmac_mac_link_up();

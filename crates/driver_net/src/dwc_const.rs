@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 /* Core registers */
 
 /*  MAC registers */

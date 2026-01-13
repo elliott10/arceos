@@ -294,6 +294,10 @@ pub fn dwmac4_flow_ctrl() {
     let flow = GMAC_TX_FLOW_CTRL_TFE | (pause_time << GMAC_TX_FLOW_CTRL_PT_SHIFT);
     writev((ethernet1) + mac_q0_tx_flow_ctrl, flow); //0xffff0002
 
+    let mut mac_config = readv(regs::mac::CONFIG);
+    mac_config = mac_config & !(EQOS_MAC_CONFIGURATION_GPSLCE | EQOS_MAC_CONFIGURATION_WD | EQOS_MAC_CONFIGURATION_JD | EQOS_MAC_CONFIGURATION_JE);
+    writev(regs::mac::CONFIG, mac_config | (EQOS_MAC_CONFIGURATION_CST | EQOS_MAC_CONFIGURATION_ACS));
+
     */
 }
 
@@ -467,6 +471,23 @@ pub fn dma_status_read() {
         "DMA_CUR_RX: BUF@{:#x}, DESC@{:#x}; DMA_CUR_TX: BUF@{:#x}, DESC@{:#x}",
         cur_rx_buf_addr, cur_rx_desc, cur_tx_buf_addr, cur_tx_desc
     );
+
+    let txdesc_addr: u32 = readv(ioaddr + dma_ch0_txdesc_list_address);
+    let rxdesc_addr: u32 = readv(ioaddr + dma_ch0_rxdesc_list_address);
+    let tx_tail_addr: u32 = readv(ioaddr + dma_ch0_txdesc_tail_pointer);
+    let rx_tail_addr: u32 = readv(ioaddr + dma_ch0_rxdesc_tail_pointer);
+    debug!(
+        "DMA RX DESC ADDR: {:#x}~{:#x}; DMA TX DESC ADDR: {:#x}~{:#x}",
+        rxdesc_addr, rx_tail_addr, txdesc_addr, tx_tail_addr
+    );
+
+
+    /*
+   for i in (0x1100..0x1200).step_by(0x4) {
+   let val: u32 = readv(ioaddr + i);
+   debug!("DMA REGS: {:#x}={:#X}", i, val);
+   }
+    */
 
     // 3. PHY status ?
     const REG_PHY_SPEC_STATUS: u32 = 0x11;
