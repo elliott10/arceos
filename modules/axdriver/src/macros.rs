@@ -87,7 +87,7 @@ macro_rules! for_each_drivers {
         }
         #[cfg(block_dev = "cvsd")]
         {
-            type $drv_type = crate::drivers::CvsdMmcDriver;
+            type $drv_type = crate::drivers::CvsdMmc;
             $code
         }
         #[cfg(block_dev = "ahci")]

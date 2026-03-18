@@ -2,16 +2,14 @@
 
 #![allow(unused_imports, dead_code)]
 
-use crate::AxDeviceEnum;
 use axdriver_base::DeviceType;
-
-#[cfg(feature = "virtio")]
-use crate::virtio::{self, VirtIoDevMeta};
-
 #[cfg(feature = "bus-pci")]
 use axdriver_pci::{DeviceFunction, DeviceFunctionInfo, PciRoot};
 
 pub use super::dummy::*;
+use crate::AxDeviceEnum;
+#[cfg(feature = "virtio")]
+use crate::virtio::{self, VirtIoDevMeta};
 
 pub trait DriverProbe {
     fn probe_global() -> Option<AxDeviceEnum> {
@@ -99,18 +97,23 @@ cfg_if::cfg_if! {
 
 cfg_if::cfg_if! {
     if #[cfg(block_dev = "cvsd")] {
-        pub struct CvsdMmcDriver;
-        register_block_driver!(CvsdMmcDriver, axdriver_block::cvsd::CvsdDriver);
+        use axhal::mem::phys_to_virt;
+        use axdriver_block::cvsd::CvsdDriver;
+        use super::mbr::MbrPartitionDev;
 
-        impl DriverProbe for CvsdMmcDriver {
+        pub struct CvsdMmc;
+        register_block_driver!(CvsdMmc, MbrPartitionDev<CvsdDriver>);
+
+        impl DriverProbe for CvsdMmc {
             fn probe_global() -> Option<AxDeviceEnum> {
-                let sdmmc = {
-                    axdriver_block::cvsd::CvsdDriver::new(
-                        axhal::mem::phys_to_virt(axconfig::devices::CVSD_PADDR.into()).into(),
-                        axhal::mem::phys_to_virt(axconfig::devices::SYSCON_PADDR.into()).into(),
-                        ).expect("CVSD init failed")
-                };
-                Some(AxDeviceEnum::from_block(sdmmc))
+                //let root = axconfig::devices::ROOT_PARTITION_NAME.parse().unwrap();
+                info!("Probe CV SD Bootable Part @ {:#x}", axconfig::devices::CVSD_PADDR);
+
+                let sdmmc = CvsdDriver::new(
+                    phys_to_virt(axconfig::devices::CVSD_PADDR.into()).into(),
+                    phys_to_virt(axconfig::devices::SYSCON_PADDR.into()).into(),
+                    ).expect("CVSD init failed");
+                MbrPartitionDev::new(sdmmc).ok().map(AxDeviceEnum::from_block)
             }
         }
     }
