@@ -2,8 +2,8 @@ extern crate alloc;
 
 use axdriver_base::{BaseDriverOps, DevError, DevResult, DeviceType};
 use gpt_disk_io::{
-    BlockIo, Disk, DiskError,
-    gpt_disk_types::{BlockSize, GptPartitionEntry, Lba, LbaRangeInclusive, MasterBootRecord},
+    BlockIo,
+    gpt_disk_types::{BlockSize, Lba, LbaRangeInclusive, MasterBootRecord},
 };
 use log::{debug, info};
 
@@ -43,15 +43,6 @@ impl<T: BlockDriverOps> BlockIo for BlockDriverAdapter<'_, T> {
     }
 }
 
-fn map_disk_error(err: DiskError<DevError>) -> DevError {
-    match err {
-        DiskError::BufferTooSmall => DevError::InvalidParam,
-        DiskError::Overflow => DevError::BadState,
-        DiskError::BlockSizeSmallerThanPartitionEntry => DevError::InvalidParam,
-        DiskError::Io(e) => e,
-    }
-}
-
 /// A Mbr partition.
 pub struct MbrPartitionDev<T> {
     inner: T,
@@ -73,7 +64,7 @@ impl<T: BlockDriverOps> MbrPartitionDev<T> {
         let mbr = unsafe { *mbr_ptr };
 
         if mbr.signature == [0x55, 0xaa] {
-            info!("Found MBR: {:x?}", mbr);
+            debug!("Found MBR: {:x?}", mbr);
 
             let mut starting_lba = Lba(u64::MAX);
             let mut ending_lba = Lba(0);
@@ -81,13 +72,13 @@ impl<T: BlockDriverOps> MbrPartitionDev<T> {
                 // "OS Types" : 0x07 = NTFS/exFAT, 0x0c = FAT32, 0x0f = 拓展分区 (LBA), 0x83 = Linux (ext2/3/4), 0xee = GPT保护分区, 0xef = EFI系统分区(ESP),
                 match mbr.partitions[i].os_indicator {
                     0x07 => {
-                        info!("Found a NTFS/exFAT MBR partition[{}]", i);
+                        debug!("Found a NTFS/exFAT MBR partition[{}]", i);
                     }
                     0x0c => {
                         info!("Found a FAT32 MBR partition[{}]", i);
                     }
                     0x0f => {
-                        info!("Found an Extended partition[{}].", i);
+                        debug!("Found an Extended partition[{}].", i);
                     }
                     0x83 => {
                         info!("Found a Linux (ext2/3/4) MBR partition[{}].", i);
@@ -100,9 +91,10 @@ impl<T: BlockDriverOps> MbrPartitionDev<T> {
                                 + mbr.partitions[i].size_in_lba.to_u32() as u64
                                 - 1);
                             info!(
-                                "Selecting this bootable partition[{}] @ {:#x} ~ {:#x} as the \
+                                "Selecting this bootable partition[{}] {}M @ {:#x} ~ {:#x} as the \
                                  rootfs",
                                 i,
+                                (mbr.partitions[i].size_in_lba.to_u32() as u64 * bs.to_u64()) / (1024 * 1024),
                                 starting_lba.to_u64(),
                                 ending_lba.to_u64()
                             );
@@ -110,13 +102,13 @@ impl<T: BlockDriverOps> MbrPartitionDev<T> {
                         }
                     }
                     0xee => {
-                        info!("Found GPT protective partition[{}].", i);
+                        debug!("Found GPT protective partition[{}].", i);
                     }
                     0xef => {
-                        info!("Found (ESP) EFI system partition[{}].", i);
+                        debug!("Found (ESP) EFI system partition[{}].", i);
                     }
                     _ => {
-                        warn!(
+                        debug!(
                             "Unknown MBR partition[{}] type: {:#x}",
                             i, mbr.partitions[i].os_indicator
                         );
