@@ -126,6 +126,9 @@ make A=apps/ros2/rosmasterx3 ARCH=riscv64 SMP=4 PLATFORM=riscv64-lpi4a LOG=debug
 ext4load mmc 0:2 $kernel_addr arceos-lpi4a.uImage; bootm $kernel_addr - $dtb_addr;'
 ```
 
+另：基于荔枝派4A和亚博智能无人车在ArceOS上实现KCF目标追踪和颜色识别追踪的demo
+https://github.com/orgs/rcore-os/discussions/39
+
 ### Your custom apps
 
 #### Rust
