@@ -1,8 +1,9 @@
 //! ARM64 CPU cycle and timer
+#![allow(dead_code)]
 
 /// Read reg: MPIDR_EL1
 pub fn read_mpidr() -> u64 {
-    let mut reg_r = 0;
+    let reg_r: u64;
     unsafe {
         core::arch::asm!("mrs {}, MPIDR_EL1", out(reg) reg_r);
     }
@@ -50,31 +51,31 @@ pub fn isb() {
 }
 
 pub fn timer_cnt() -> u64 {
-    let mut cnt = 0;
+    let cnt: u64;
     unsafe { core::arch::asm!("mrs {0}, cntvct_el0", out(reg) cnt) };
     cnt
 }
 
 pub fn timer_freq() -> u64 {
-    let mut freq = 0;
+    let freq: u64;
     unsafe { core::arch::asm!("mrs {0}, cntfrq_el0", out(reg) freq) };
     freq
 }
 
 pub fn armv8_pmuserenr() -> u64 {
-    let mut value = 0;
+    let value: u64;
     unsafe { core::arch::asm!("mrs {0}, pmuserenr_el0", out(reg) value) };
     value
 }
 
 pub fn armv8_pmcntenset() -> u64 {
-    let mut value = 0;
+    let value: u64;
     unsafe { core::arch::asm!("mrs {0}, pmcntenset_el0", out(reg) value) };
     value
 }
 
 pub fn armv8_pmcr() -> u64 {
-    let mut value = 0;
+    let value: u64;
     unsafe { core::arch::asm!("mrs {0}, pmcr_el0", out(reg) value) };
     value
 }
@@ -103,11 +104,11 @@ pub fn armv8_pmcr_set(val: u64) {
 pub fn enable_cpu_cycle() {
     println!("Enable User Access PMU @ CPU {}\n", get_cpu_id());
     // pmuserenr_el0, Enable or disables EL0 access to the performance Monitors
-    unsafe { core::arch::asm!("msr pmuserenr_el0, {}", in(reg) (0xf)) };
+    unsafe { core::arch::asm!("msr pmuserenr_el0, {0:x}", in(reg) 0xf_u64) };
     armv8_pmcr_set(ARMV8_PMCR_LC | ARMV8_PMCR_E);
 
     // pmcntenset_el0, Enables the Cycle Count Register
-    unsafe { core::arch::asm!("msr pmcntenset_el0, {}", in(reg) (1<<31)) };
+    unsafe { core::arch::asm!("msr pmcntenset_el0, {0:x}", in(reg) (1_u64 << 31)) };
     armv8_pmcr_set(armv8_pmcr() | ARMV8_PMCR_E | ARMV8_PMCR_LC);
 }
 
@@ -117,12 +118,12 @@ pub fn disable_cpu_cycle() {
 
     // Program PMU and disable all counters
     armv8_pmcr_set(armv8_pmcr() | (!ARMV8_PMCR_E));
-    unsafe { core::arch::asm!("msr pmuserenr_el0, {}", in(reg) 0) };
+    unsafe { core::arch::asm!("msr pmuserenr_el0, {0:x}", in(reg) 0_u64) };
 }
 
 /// CPU Cycle Counter
 pub fn cpu_cycle() -> u64 {
-    let mut value = 0;
+    let value: u64;
     isb();
     unsafe { core::arch::asm!("mrs {0}, pmccntr_el0", out(reg) value) };
     value

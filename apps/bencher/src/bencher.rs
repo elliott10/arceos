@@ -13,6 +13,7 @@ pub fn now_tsc() -> u64 {
 
 #[cfg(target_arch = "x86_64")]
 #[inline]
+#[allow(dead_code)]
 pub fn now_ns() -> u64 {
     now_tsc() * 1000 / TSC_FREQ_MHZ
 }
@@ -22,8 +23,15 @@ pub fn ticks_to_nanos(ticks: u64) -> u64 {
     ticks * 1_000 / TSC_FREQ_MHZ
 }
 
+#[cfg(target_arch = "x86_64")]
+#[inline]
+pub fn timer_freq() -> u64 {
+    TSC_FREQ_MHZ * 1_000_000
+}
+
 #[cfg(target_arch = "aarch64")]
 use aarch64_cpu::registers::{CNTVCT_EL0, CNTFRQ_EL0, Readable};
+#[cfg(target_arch = "aarch64")]
 use core::sync::atomic::AtomicU64;
 
 #[cfg(target_arch = "aarch64")]
@@ -43,6 +51,7 @@ pub fn now_tsc() -> u64 {
 
 #[cfg(target_arch = "aarch64")]
 #[inline]
+#[allow(dead_code)]
 pub fn now_ns() -> u64 {
     let freq = CNTFRQ_EL0.get() as u64;
     now_tsc() * (1_000_000_000 / freq)
@@ -78,6 +87,7 @@ impl Bencher {
     }
 
     #[inline]
+    #[allow(dead_code)]
     pub fn bench_fn(f: impl FnOnce()) -> u64 {
         let start = now_tsc();
         f();
@@ -139,7 +149,7 @@ impl Bencher {
         self.sum_cpu_cycle += cpu_cycle;
 
         if self.max_tsc == 0 {
-        self.set_max_tsc(div_round(elapsed, run));
+            self.set_max_tsc(div_round(elapsed, run));
         }
 
         self
@@ -166,9 +176,9 @@ impl Bencher {
             //println!("  Average RK3588(2.4GHz) CPU cycles: {}", div_round(self.sum_tsc, self.count) * (CPUFRQ_HZ.load(core::sync::atomic::Ordering::Relaxed) / timer_freq) );
 
             if self.max_cpu_cycle != 0 {
-            println!("  Min CPU cycles: {}", self.min_cpu_cycle);
-            println!("  Average CPU cycles: {}", div_round(self.sum_cpu_cycle, self.count));
-            println!("  Max CPU cycles: {}", self.max_cpu_cycle);
+                println!("  Min CPU cycles: {}", self.min_cpu_cycle);
+                println!("  Average CPU cycles: {}", div_round(self.sum_cpu_cycle, self.count));
+                println!("  Max CPU cycles: {}", self.max_cpu_cycle);
             }
         }
     }
