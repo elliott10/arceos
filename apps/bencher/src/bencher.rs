@@ -156,7 +156,7 @@ impl Bencher {
     }
 
     pub fn show(&self) {
-        println!("Benchmark: {}", self.name);
+        println!("\nBenchmark: {}", self.name);
         println!("  Iterations: {}", self.count);
         if self.count == 0 {
             return;

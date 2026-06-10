@@ -60,3 +60,57 @@ pub fn gpio_output_clear(gpio_bank: usize) {
         core::ptr::write_volatile((gpio_bank + 0x4) as *mut u32, 0 | (0xffff << 16));
     }
 }
+
+#[inline]
+fn mmio_read32(addr: usize) -> u32 {
+    unsafe { core::ptr::read_volatile(addr as *const u32) }
+}
+
+#[inline]
+fn mmio_write32(addr: usize, value: u32) {
+    unsafe { core::ptr::write_volatile(addr as *mut u32, value) }
+}
+
+#[inline]
+fn rk_write_masked(addr: usize, mask: u32, value: u32) {
+    // RK write-mask format: upper 16 bits are write-enable mask, lower 16 bits are value.
+    mmio_write32(addr, (mask << 16) | (value & mask));
+}
+
+/// Configure GPIO3_C6 iomux to GPIO function.
+/// BUS_IOC_GPIO3C_IOMUX_SEL_H, gpio3c6_sel bits[11:8] = 0.
+pub fn iomux_gpio3_c6_gpio(bus_ioc_base: usize) {
+    const BUS_IOC_GPIO3C_IOMUX_SEL_H: usize = 0x0074;
+    const GPIO3C6_SEL_SHIFT: u32 = 8;
+    const GPIO3C6_SEL_MASK: u32 = 0xF << GPIO3C6_SEL_SHIFT;
+    const GPIO3C6_SEL_GPIO: u32 = 0 << GPIO3C6_SEL_SHIFT; // GPIO function, default value after reset is 0, so this write can be skipped.
+    //const GPIO3C6_SEL_GPIO: u32 = 0x8 << GPIO3C6_SEL_SHIFT; // SPI3_MISO_M3
+
+    rk_write_masked(
+        bus_ioc_base + BUS_IOC_GPIO3C_IOMUX_SEL_H,
+        GPIO3C6_SEL_MASK,
+        GPIO3C6_SEL_GPIO,
+    );
+}
+
+/// Enable GPIO3 clocks by opening dbclk_gpio3_en and pclk_gpio3_en gate.
+/// CRU_GATE_CON17 bits[3:2] = 2'b00 means gate open.
+pub fn gpio3_clock_gate_enable(cru_base: usize) {
+    const CRU_GATE_CON17: usize = 0x0844;
+    const GPIO3_CLK_GATE_MASK: u32 = 0b11 << 2;
+    const GPIO3_CLK_GATE_ENABLE: u32 = 0b00 << 2;
+
+    rk_write_masked(
+        cru_base + CRU_GATE_CON17,
+        GPIO3_CLK_GATE_MASK,
+        GPIO3_CLK_GATE_ENABLE,
+    );
+}
+
+pub fn gpio_ver_id_get(gpio_base: usize) -> u32 {
+    mmio_read32(gpio_base + 0x0078)
+}
+
+pub fn gpio_ext_port_signals_get(gpio_base: usize) -> u32 {
+    mmio_read32(gpio_base + 0x0070)
+}

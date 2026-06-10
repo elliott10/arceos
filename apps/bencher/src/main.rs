@@ -16,7 +16,8 @@ mod gpio;
 mod bencher;
 use bencher::*;
 
-use std::thread;
+use std::thread::{self, sleep};
+use std::time::Duration;
 
 fn bench_spawn() {
     let warmup = 0;
@@ -123,16 +124,11 @@ fn bench_switch(iter: u64) {
         for _i in 0..iter / 2 {
             //println!("1 THREAD, switch {}", i);
 
-        /*
-        #[cfg(not(feature = "qemu"))]
-        {
-            let GPIO3: usize = 0xffff_0000_fec40000;
-            // Turn off all LEDs
-            dw_apb_uart::DW8250::gpio_output_clear(GPIO3);
-            // LED RED
-            dw_apb_uart::DW8250::gpio_output(GPIO3, 10, true);
-        }
-        */
+            // GPIO Output： 低电平
+            #[cfg(not(feature = "qemu"))]
+            {
+                gpio::gpio3_output_low();
+            }
 
             thread::yield_now();
         }
@@ -141,6 +137,16 @@ fn bench_switch(iter: u64) {
     let mut bencher_switch = Bencher::new("switch");
     let mut sum_cpu_cycle = 0;
     let mut sum_tsc = 0;
+
+    #[cfg(not(feature = "qemu"))]
+    {
+        println!("THREAD 0 set GPIO3_C6 output low and high");
+        gpio::gpio3_output_low();
+        gpio::gpio3_output_high();
+        gpio::gpio3_output_low();
+        gpio::gpio3_output_high();
+    }
+    println!("Start the task thread switching test ...");
 
     for _i in 0..iter / 2 {
         //println!("0 THREAD, switch {}", i);
@@ -154,16 +160,11 @@ fn bench_switch(iter: u64) {
         let cpu_cycle_end = cycle::cpu_cycle();
         let tsc_end = now_tsc();
 
-        /*
+        // GPIO Output 高电平
         #[cfg(not(feature = "qemu"))]
         {
-            let GPIO3: usize = 0xffff_0000_fec40000;
-            // Turn off all LEDs
-            dw_apb_uart::DW8250::gpio_output_clear(GPIO3);
-            // LED Green
-            dw_apb_uart::DW8250::gpio_output(GPIO3, 16, true);
+            gpio::gpio3_output_high();
         }
-        */
 
         let cpu_cycle = cpu_cycle_end - cpu_cycle_start;
         let tsc = tsc_end - tsc_start;
@@ -256,13 +257,19 @@ fn main() {
 
     #[cfg(not(feature = "qemu"))]
     {
+        gpio::gpio3_clock_gate_enable();
+        gpio::iomux_gpio3_c6_gpio();
+
         gpio::gpio3_clear_all();
         gpio::gpio3_led_green_on();
+
+        gpio::gpio_ver_id_get(gpio::GPIO3_BASE);
+        gpio::gpio_ext_port_signals_get(gpio::GPIO3_BASE);
     }
 
     for i in 0..iter {
         println!(
-            "\n---------\nBencher: {} task switch count = {}\n",
+            "\n---------\nBencher: {} task switch count = {}",
             i, switch_count
         );
         #[cfg(not(feature = "qemu"))]

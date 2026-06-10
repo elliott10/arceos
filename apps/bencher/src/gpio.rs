@@ -1,7 +1,7 @@
 const BUS_IOC_BASE: usize = 0xffff_0000_fd5f8000;
 const CRU_BASE: usize = 0xffff_0000_fd7c0000;
 const UART7_BASE: usize = 0xffff_0000_feba0000;
-const GPIO3_BASE: usize = 0xffff_0000_fec40000;
+pub const GPIO3_BASE: usize = 0xffff_0000_fec40000;
 
 #[inline]
 fn mmio_read32(addr: usize) -> u32 {
@@ -92,6 +92,18 @@ pub fn uart7_put_hi() {
     uart7_put_bytes(b"Hi\n\r");
 }
 
+/// Configure GPIO3_C6 iomux to GPIO function.
+/// BUS_IOC_GPIO3C_IOMUX_SEL_H, gpio3c6_sel bits[11:8] = 0.
+pub fn iomux_gpio3_c6_gpio() {
+    dw_apb_uart::gpio::iomux_gpio3_c6_gpio(BUS_IOC_BASE);
+}
+
+/// Enable GPIO3 clocks by opening dbclk_gpio3_en / pclk_gpio3_en gate.
+/// CRU_GATE_CON17 bits[3:2] = 2'b00 means gate open (enabled).
+pub fn gpio3_clock_gate_enable() {
+    dw_apb_uart::gpio::gpio3_clock_gate_enable(CRU_BASE);
+}
+
 ////////// LED
 /// Blue: GPIO1_D5, 61
 /// Red:* GPIO3_B2, 106, num=10
@@ -112,4 +124,32 @@ pub fn gpio3_led_red_on() {
 pub fn gpio3_led_green_on() {
     // Green LED
     dw_apb_uart::gpio::gpio_output(GPIO3_BASE, 16, true);
+}
+
+/// GPIO3_C6 (num=22) output high, used as thread-0 pulse level.
+pub fn gpio3_output_high() {
+    gpio3_clock_gate_enable();
+    iomux_gpio3_c6_gpio();
+    dw_apb_uart::gpio::gpio_output(GPIO3_BASE, 22, true);
+}
+
+/// GPIO3_C6 (num=22) output low, used as thread-1 pulse level.
+pub fn gpio3_output_low() {
+    gpio3_clock_gate_enable();
+    iomux_gpio3_c6_gpio();
+    dw_apb_uart::gpio::gpio_output(GPIO3_BASE, 22, false);
+}
+
+pub fn gpio_ver_id_get(gpio_base: usize) {
+    let ver_id = dw_apb_uart::gpio::gpio_ver_id_get(gpio_base);
+    println!("Read GPIO_VER_ID={:#x}", ver_id);
+}
+
+/// 当前 GPIO 端口各引脚在管脚上的实时电平状态。
+/// 32位值，每一位对应这个 GPIO 控制器里的一个引脚状态：
+/// 0：该引脚当前是低电平
+/// 1：该引脚当前是高电平
+pub fn gpio_ext_port_signals_get(gpio_base: usize) {
+    let ext_port = dw_apb_uart::gpio::gpio_ext_port_signals_get(gpio_base);
+    println!("Read GPIO_EXT_PORT={:#x}", ext_port);
 }
