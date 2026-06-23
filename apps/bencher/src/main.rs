@@ -140,13 +140,13 @@ fn bench_switch(iter: u64) {
 
     #[cfg(not(feature = "qemu"))]
     {
-        println!("THREAD 0 set GPIO3_C6 output low and high");
+        println!("2 THREADS switching GPIO3_C6 output between low and high");
         gpio::gpio3_output_low();
         gpio::gpio3_output_high();
         gpio::gpio3_output_low();
         gpio::gpio3_output_high();
     }
-    println!("Start the task thread switching test ...");
+    //println!("Start the task thread switching test ...");
 
     for _i in 0..iter / 2 {
         //println!("0 THREAD, switch {}", i);
@@ -168,10 +168,8 @@ fn bench_switch(iter: u64) {
 
         let cpu_cycle = cpu_cycle_end - cpu_cycle_start;
         let tsc = tsc_end - tsc_start;
-
         sum_cpu_cycle += cpu_cycle;
         sum_tsc += tsc;
-
         bencher_switch.set_a_cpu_cycle(cpu_cycle / 2);
         bencher_switch.set_max_tsc(tsc / 2);
     }
@@ -250,11 +248,6 @@ fn main() {
         cycle::armv8_pmcr()
     );
 
-    // 每1亿次切换将输出一次GPIO UART信号
-    println!("After every 100 million task switches, a GPIO UART signal will be output");
-    let switch_count = 100_000_000;
-    let iter = 100;
-
     #[cfg(not(feature = "qemu"))]
     {
         gpio::gpio3_clock_gate_enable();
@@ -267,15 +260,22 @@ fn main() {
         gpio::gpio_ext_port_signals_get(gpio::GPIO3_BASE);
     }
 
+    // 每1亿次切换将输出一次GPIO UART信号
+    println!("After every 100 million task switches, a GPIO UART signal will be output");
+    let switch_count = 100_000_000;
+    let iter = 100;
+
     for i in 0..iter {
         println!(
             "\n---------\nBencher: {} task switch count = {}",
             i, switch_count
         );
+
+        /*
         #[cfg(not(feature = "qemu"))]
         {
             gpio::uart7_put_hi();
-        }
+        } */
 
         bench_switch(switch_count);
     }

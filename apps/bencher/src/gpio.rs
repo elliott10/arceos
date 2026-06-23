@@ -128,15 +128,11 @@ pub fn gpio3_led_green_on() {
 
 /// GPIO3_C6 (num=22) output high, used as thread-0 pulse level.
 pub fn gpio3_output_high() {
-    gpio3_clock_gate_enable();
-    iomux_gpio3_c6_gpio();
     dw_apb_uart::gpio::gpio_output(GPIO3_BASE, 22, true);
 }
 
 /// GPIO3_C6 (num=22) output low, used as thread-1 pulse level.
 pub fn gpio3_output_low() {
-    gpio3_clock_gate_enable();
-    iomux_gpio3_c6_gpio();
     dw_apb_uart::gpio::gpio_output(GPIO3_BASE, 22, false);
 }
 
