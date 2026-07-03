@@ -176,9 +176,12 @@ impl Bencher {
             //println!("  Average RK3588(2.4GHz) CPU cycles: {}", div_round(self.sum_tsc, self.count) * (CPUFRQ_HZ.load(core::sync::atomic::Ordering::Relaxed) / timer_freq) );
 
             if self.max_cpu_cycle != 0 {
-                println!("  Min CPU cycles: {}", self.min_cpu_cycle);
+                //println!("  Min CPU cycles: {}", self.min_cpu_cycle);
                 println!("  Average CPU cycles: {}", div_round(self.sum_cpu_cycle, self.count));
-                println!("  Max CPU cycles: {}", self.max_cpu_cycle);
+                //println!("  Max CPU cycles: {}", self.max_cpu_cycle);
+
+                let cpu_freq = crate::cycle::cpu_freq(self.sum_cpu_cycle, self.sum_tsc);
+                println!("\n  CPU Freq: {} Hz ({}.{} GHz)", cpu_freq, cpu_freq / 1_000_000_000, div_round((cpu_freq % 1_000_000_000), 1_000_000));
             }
         }
     }

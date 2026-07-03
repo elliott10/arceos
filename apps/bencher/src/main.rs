@@ -280,5 +280,11 @@ fn main() {
         bench_switch(switch_count);
     }
 
+    #[cfg(not(feature = "qemu"))]
+    {
+        gpio::gpio3_clear_all();
+        gpio::gpio3_led_red_on();
+    }
+
     println!("\nBencher end");
 }
