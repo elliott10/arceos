@@ -138,6 +138,7 @@ APP_NAME := $(shell basename $(APP))
 LD_SCRIPT := $(TARGET_DIR)/$(TARGET)/$(MODE)/linker_$(PLAT_NAME).lds
 OUT_ELF := $(OUT_DIR)/$(APP_NAME)_$(PLAT_NAME).elf
 OUT_BIN := $(patsubst %.elf,%.bin,$(OUT_ELF))
+OUT_ASM := $(patsubst %.elf,%.asm,$(OUT_ELF))
 OUT_UIMG := $(patsubst %.elf,%.uimg,$(OUT_ELF))
 ifeq ($(UIMAGE), y)
   FINAL_IMG := $(OUT_UIMG)
@@ -155,7 +156,7 @@ ifeq ($(PLAT_NAME), aarch64-raspi4)
   include scripts/make/raspi4.mk
 else ifeq ($(PLAT_NAME), aarch64-bsta1000b)
   include scripts/make/bsta1000b-fada.mk
-else ifeq ($(PLATFORM_NAME), aarch64-rk3588j)
+else ifeq ($(PLAT_NAME), aarch64-rk3588j)
   include scripts/make/rk3588.mk
 endif
 
@@ -176,8 +177,9 @@ justrun:
 	$(call run_qemu)
 
 debug: build
-	$(call run_qemu_debug) &
-	sleep 1
+	$(call run_qemu_debug)
+
+gdb:
 	$(GDB) $(OUT_ELF) \
 	  -ex 'target remote localhost:1234' \
 	  -ex 'b rust_entry' \

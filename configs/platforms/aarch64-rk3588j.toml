@@ -17,7 +17,7 @@ phys-memory-size = 0x800_0000       # uint
 # Base physical address of the kernel image.
 kernel-base-paddr = 0x48_0000       # uint
 # Base virtual address of the kernel image.
-kernel-base-vaddr = "0x0000_0000_0048_0000"     # uint
+kernel-base-vaddr = "0xffff_0000_0048_0000"     # uint
 # Linear mapping offset, for quick conversions between physical and virtual
 # addresses.
 phys-virt-offset = "0xffff_0000_0000_0000"      # uint
@@ -35,6 +35,7 @@ mmio-regions = [
     # ["0x1000_0000", "0x2eff_0000"],     # PCI memory ranges (ranges 1: 32-bit MMIO space)
     # ["0x40_1000_0000", "0x1000_0000"],  # PCI config space
     ["0xfeb50000", "0x1000"], # uart8250 UART0
+    ["0xfeb40000", "0x1000"], # uart8250 UART1
     ["0xfe600000", "0x10000"], # gic-v3 gicd
     ["0xfe680000", "0x100000"], # gic-v3 gicr
     ["0xa41000000", "0x400000"],
