@@ -250,8 +250,36 @@ pub fn send_sgi_all(vector: usize) {
     send_sgi_inner(0, 0, 0, 0, vector, true);
 }
 
-// dummy implementation
 pub struct MyVgic{}
+
+impl MyVgic {
+    /// Get the GICv3 Distributor handle.
+    pub fn get_gicd() -> &'static SpinNoIrq<Option<arm_gic_driver::v3::Gic>>{
+        &GICD
+    }
+    /// Get the GICR handle.
+    pub fn get_gicr() -> &'static SpinNoIrq<Option<Box<dyn arm_gic_driver::local::Interface>>> {
+        &GICR
+    }
+    /// Get the physical base address of the host GICD.
+    pub fn get_gicd_base() -> PhysAddr {
+        GICD_BASE
+    }
+    /// Get the physical base address of the host GICR.
+    pub fn get_gicr_base() -> PhysAddr {
+        GICR_BASE
+    }
+    /// Provides information about the configuration of this Distributor (GICD_TYPER).
+    pub fn get_gicd_typer() -> u32 {
+        let vaddr = phys_to_virt(Self::get_gicd_base() + 0x0004);
+        unsafe { core::ptr::read_volatile(vaddr.as_ptr_of::<u32>()) }
+    }
+    /// Implementer Identification Register (GICD_IIDR).
+    pub fn get_gicd_iidr() -> u32 {
+        let vaddr = phys_to_virt(Self::get_gicd_base() + 0x0008);
+        unsafe { core::ptr::read_volatile(vaddr.as_ptr_of::<u32>()) }
+    }
+}
 
 /// Initializes GICD, GICC on the primary CPU.
 pub(crate) fn init_primary() {
