@@ -31,7 +31,7 @@ fn main() {
     // Shared memory base physical address.
     let publisher_shm_base: u64 = 0;
     // Shared memory size in bytes.
-    let publisher_shm_size: u64 = 0;
+    let publisher_shm_size: u64 = 4096 * 2;
 
     let ret = hvc::hvc_publish_channel(
         publisher_channel_key,
@@ -84,7 +84,7 @@ fn main() {
     );
 
     loop {
-        modules::axtask::sleep(Duration::from_millis(2000));
+        modules::axtask::sleep(Duration::from_millis(8000));
         let msg = format!("Hello from IVC Tester! Time: {:?}", ax_monotonic_time());
 
         println!("{}", msg);
