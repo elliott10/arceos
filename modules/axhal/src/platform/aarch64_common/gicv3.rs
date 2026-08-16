@@ -44,7 +44,7 @@ pub fn set_enable(irq_num: usize, enabled: bool) {
     let d = gicd.as_mut().unwrap();
 
     if irq_num < 32 {
-        trace!("GICR set enable: {} {}", irq_num, enabled);
+        debug!("GICR v3 set enable: {} {}", irq_num, enabled);
 
         if enabled {
             d.get_gicr().irq_enable(irq_num.into()).unwrap();
@@ -52,7 +52,7 @@ pub fn set_enable(irq_num: usize, enabled: bool) {
             d.get_gicr().irq_disable(irq_num.into()).unwrap();
         }
     } else {
-        trace!("GICD set enable: {} {}", irq_num, enabled);
+        debug!("GICD v3 set enable: {} {}", irq_num, enabled);
 
         if enabled {
             d.irq_enable(irq_num.into()).unwrap();

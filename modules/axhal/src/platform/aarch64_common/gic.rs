@@ -46,7 +46,7 @@ static GICH: GicHypervisorInterface =
 
 /// Enables or disables the given IRQ.
 pub fn set_enable(irq_num: usize, enabled: bool) {
-    trace!("GICD set enable: {} {}", irq_num, enabled);
+    debug!("GICD v2 set enable: {} {}", irq_num, enabled);
     GICD.lock().set_enable(irq_num as _, enabled);
 }
 
