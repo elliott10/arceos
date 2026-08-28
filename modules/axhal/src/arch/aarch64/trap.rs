@@ -1,12 +1,18 @@
 use core::arch::global_asm;
 
-use aarch64_cpu::registers::{ESR_EL1, FAR_EL1};
+#[cfg(feature = "hv")]
+use aarch64_cpu::registers::{ESR_EL2 as ESR, FAR_EL2 as FAR};
+#[cfg(not(feature = "hv"))]
+use aarch64_cpu::registers::{ESR_EL1 as ESR, FAR_EL1 as FAR};
 use page_table_entry::MappingFlags;
 use tock_registers::interfaces::Readable;
 
 use super::TrapFrame;
 
-global_asm!(include_str!("trap.S"), cache_current_task_ptr = sym crate::cpu::cache_current_task_ptr);
+#[cfg(feature = "hv")]
+global_asm!(include_str!("trap.S"), cache_current_task_ptr = sym crate::cpu::cache_current_task_ptr, is_hv = const 1);
+#[cfg(not(feature = "hv"))]
+global_asm!(include_str!("trap.S"), cache_current_task_ptr = sym crate::cpu::cache_current_task_ptr, is_hv = const 0);
 
 #[repr(u8)]
 #[derive(Debug)]
@@ -46,7 +52,7 @@ fn handle_instruction_abort(tf: &TrapFrame, iss: u64, is_user: bool) {
     if is_user {
         access_flags |= MappingFlags::USER;
     }
-    let vaddr = va!(FAR_EL1.get() as usize);
+    let vaddr = va!(FAR.get() as usize);
 
     // Only handle Translation fault and Permission fault
     if !matches!(iss & 0b111100, 0b0100 | 0b1100) // IFSC or DFSC bits
@@ -75,7 +81,7 @@ fn handle_data_abort(tf: &TrapFrame, iss: u64, is_user: bool) {
     if is_user {
         access_flags |= MappingFlags::USER;
     }
-    let vaddr = va!(FAR_EL1.get() as usize);
+    let vaddr = va!(FAR.get() as usize);
 
     // Only handle Translation fault and Permission fault
     if !matches!(iss & 0b111100, 0b0100 | 0b1100) // IFSC or DFSC bits
@@ -95,18 +101,18 @@ fn handle_data_abort(tf: &TrapFrame, iss: u64, is_user: bool) {
 
 #[unsafe(no_mangle)]
 fn handle_sync_exception(tf: &mut TrapFrame) {
-    let esr = ESR_EL1.extract();
-    let iss = esr.read(ESR_EL1::ISS);
-    match esr.read_as_enum(ESR_EL1::EC) {
+    let esr = ESR.extract();
+    let iss = esr.read(ESR::ISS);
+    match esr.read_as_enum(ESR::EC) {
         #[cfg(feature = "uspace")]
         Some(ESR_EL1::EC::Value::SVC64) => {
             tf.r[0] = crate::trap::handle_syscall(tf, tf.r[8] as usize) as u64;
         }
-        Some(ESR_EL1::EC::Value::InstrAbortLowerEL) => handle_instruction_abort(tf, iss, true),
-        Some(ESR_EL1::EC::Value::InstrAbortCurrentEL) => handle_instruction_abort(tf, iss, false),
-        Some(ESR_EL1::EC::Value::DataAbortLowerEL) => handle_data_abort(tf, iss, true),
-        Some(ESR_EL1::EC::Value::DataAbortCurrentEL) => handle_data_abort(tf, iss, false),
-        Some(ESR_EL1::EC::Value::Brk64) => {
+        Some(ESR::EC::Value::InstrAbortLowerEL) => handle_instruction_abort(tf, iss, true),
+        Some(ESR::EC::Value::InstrAbortCurrentEL) => handle_instruction_abort(tf, iss, false),
+        Some(ESR::EC::Value::DataAbortLowerEL) => handle_data_abort(tf, iss, true),
+        Some(ESR::EC::Value::DataAbortCurrentEL) => handle_data_abort(tf, iss, false),
+        Some(ESR::EC::Value::Brk64) => {
             debug!("BRK #{:#x} @ {:#x} ", iss, tf.elr);
             tf.elr += 4;
         }
@@ -115,8 +121,8 @@ fn handle_sync_exception(tf: &mut TrapFrame) {
                 "Unhandled synchronous exception @ {:#x}: ESR={:#x} (EC {:#08b}, ISS {:#x})",
                 tf.elr,
                 esr.get(),
-                esr.read(ESR_EL1::EC),
-                esr.read(ESR_EL1::ISS),
+                esr.read(ESR::EC),
+                esr.read(ESR::ISS),
             );
         }
     }

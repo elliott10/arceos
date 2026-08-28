@@ -1,3 +1,25 @@
+.if {is_hv}
+.macro LOAD_EXCEPTION_RETURN_REGS elr, spsr
+    mrs     \elr, elr_el2
+    mrs     \spsr, spsr_el2
+.endm
+
+.macro STORE_EXCEPTION_RETURN_REGS elr, spsr
+    msr     elr_el2, \elr
+    msr     spsr_el2, \spsr
+.endm
+.else
+.macro LOAD_EXCEPTION_RETURN_REGS elr, spsr
+    mrs     \elr, elr_el1
+    mrs     \spsr, spsr_el1
+.endm
+
+.macro STORE_EXCEPTION_RETURN_REGS elr, spsr
+    msr     elr_el1, \elr
+    msr     spsr_el1, \spsr
+.endm
+.endif
+
 .macro SAVE_REGS
     sub     sp, sp, 34 * 8
     stp     x0, x1, [sp]
@@ -17,8 +39,7 @@
     stp     x28, x29, [sp, 28 * 8]
 
     mrs     x9, sp_el0
-    mrs     x10, elr_el1
-    mrs     x11, spsr_el1
+    LOAD_EXCEPTION_RETURN_REGS x10, x11
     stp     x30, x9, [sp, 30 * 8]
     stp     x10, x11, [sp, 32 * 8]
     
@@ -32,8 +53,7 @@
     ldp     x10, x11, [sp, 32 * 8]
     ldp     x30, x9, [sp, 30 * 8]
     msr     sp_el0, x9
-    msr     elr_el1, x10
-    msr     spsr_el1, x11
+    STORE_EXCEPTION_RETURN_REGS x10, x11
 
     ldp     x28, x29, [sp, 28 * 8]
     ldp     x26, x27, [sp, 26 * 8]

@@ -21,6 +21,7 @@ struct TaskWakeupEvent {
 
 impl TimerEvent for TaskWakeupEvent {
     fn callback(self, _now: TimeValue) {
+        debug!("TimerEvent callback");
         // Ignore the timer event if timeout was set but not triggered
         // (wake up by `WaitQueue::notify()`).
         // Judge if this timer event is still valid by checking the ticket ID.

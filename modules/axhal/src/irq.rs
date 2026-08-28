@@ -54,5 +54,12 @@ pub fn handler_irq(irq_num: usize) -> bool {
     let guard = kernel_guard::NoPreempt::new();
     dispatch_irq(irq_num);
     drop(guard); // rescheduling may occur when preemption is re-enabled.
+    // 注：drop 将会调用下列函数，进行任务抢占切换，导致当前sp发生改变;
+    // 此中断处理函数返回后，会在arm_vcpu::HANDLE_CURRENT_IRQ函数中以错误的SP寄存器，执行了.Lexception_return_el2返回操作，
+    // 将导致: arm_vcpu: Exception Class: 0x21 (Instruction Abort). EL2取指异常
+    //
+    // -> release() (若使能抢占) -> enable_preempt()
+    // -> current_check_preempt_pending() -> preempt_resched() -...-> context.rs::context_switch()
+
     true
 }

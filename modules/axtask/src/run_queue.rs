@@ -272,6 +272,7 @@ impl<G: BaseGuard> AxRunQueueRef<'_, G> {
 impl<G: BaseGuard> CurrentRunQueueRef<'_, G> {
     #[cfg(feature = "irq")]
     pub fn scheduler_timer_tick(&mut self) {
+        debug!("run_queue {} scheduler_timer_tick", self.inner.cpu_id);
         let curr = &self.current_task;
         if !curr.is_idle() && self.inner.scheduler.lock().task_tick(curr.as_task_ref()) {
             #[cfg(feature = "preempt")]

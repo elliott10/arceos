@@ -277,7 +277,7 @@ pub(crate) fn init_primary() {
     GICR.lock().replace(interface);
 
     // SAFETY: Set the SRE[0] bit to 1 to enable Group 1 interrupts.
-    // ICC_SRE_EL2.set(0b1);
+    ICC_SRE_EL2.set(0b1);
 
     // let waker = self[current_cpu().id].WAKER.get();
     // self[current_cpu().id].WAKER.set(waker & !GICR_WAKER_PSLEEP_BIT as u32);
