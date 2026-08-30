@@ -25,6 +25,7 @@ multitask = [
     "dep:cpumask",
 ]
 irq = []
+deferred-irq-resched = ["axhal/deferred-irq-resched", "preempt"]
 tls = ["axhal/tls"]
 preempt = ["irq", "percpu?/preempt", "kernel_guard/preempt"]
 smp = ["kspin/smp"]

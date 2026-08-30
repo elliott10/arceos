@@ -37,6 +37,10 @@ cfg_if::cfg_if! {
 #[cfg(feature = "preempt")]
 struct KernelGuardIfImpl;
 
+#[cfg(all(feature = "preempt", feature = "deferred-irq-resched"))]
+#[percpu::def_percpu]
+static IRQ_RESCHED_DEFERRED: usize = 0;
+
 #[cfg(feature = "preempt")]
 #[crate_interface::impl_interface]
 impl kernel_guard::KernelGuardIf for KernelGuardIfImpl {
@@ -48,7 +52,32 @@ impl kernel_guard::KernelGuardIf for KernelGuardIfImpl {
 
     fn enable_preempt() {
         if let Some(curr) = current_may_uninit() {
-            curr.enable_preempt(true);
+            #[cfg(feature = "deferred-irq-resched")]
+            let resched = unsafe { IRQ_RESCHED_DEFERRED.read_current_raw() } == 0;
+            #[cfg(not(feature = "deferred-irq-resched"))]
+            let resched = true;
+
+            curr.enable_preempt(resched);
+        }
+    }
+}
+
+#[cfg(all(feature = "preempt", feature = "deferred-irq-resched"))]
+#[crate_interface::impl_interface]
+impl axhal::irq::IrqReschedIf for KernelGuardIfImpl {
+    fn enter_irq() {
+        unsafe {
+            let depth = IRQ_RESCHED_DEFERRED.read_current_raw();
+            trace!("enter_irq IRQ_RESCHED_DEFERRED {} + 1", depth);
+            IRQ_RESCHED_DEFERRED.write_current_raw(depth + 1);
+        }
+    }
+
+    fn exit_irq() {
+        unsafe {
+            let depth = IRQ_RESCHED_DEFERRED.read_current_raw();
+            assert!(depth > 0, "unbalanced deferred IRQ reschedule region");
+            IRQ_RESCHED_DEFERRED.write_current_raw(depth - 1);
         }
     }
 }
@@ -97,6 +126,17 @@ pub fn on_timer_tick() {
     // Since irq and preemption are both disabled here,
     // we can get current run queue with the default `kernel_guard::NoOp`.
     current_run_queue::<NoOp>().scheduler_timer_tick();
+}
+
+/// Performs a pending timer irq requested preemption
+///
+/// This is the safe-point counterpart of the deferred IRQ rescheduling: an IRQ
+/// (e.g. the EL2 host timer tick) that arrives while running on an exception stack only sets the pending flag;
+/// the actual task switch is deferred until this is called from a normal task stack
+/// (e.g. Hypervisor after each VM exit).
+pub fn resched_if_pending() {
+    #[cfg(feature = "preempt")]
+    crate::task::TaskInner::current_check_preempt_pending();
 }
 
 /// Adds the given task to the run queue, returns the task reference.

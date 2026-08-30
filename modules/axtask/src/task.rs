@@ -382,7 +382,7 @@ impl TaskInner {
     }
 
     #[cfg(feature = "preempt")]
-    fn current_check_preempt_pending() {
+    pub(crate) fn current_check_preempt_pending() {
         use kernel_guard::NoPreemptIrqSave;
         let curr = crate::current();
         if curr.need_resched.load(Ordering::Acquire) && curr.can_preempt(0) {

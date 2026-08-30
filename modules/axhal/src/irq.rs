@@ -21,6 +21,17 @@ pub type IrqHandler = handler_table::Handler;
 
 static IRQ_HANDLER_TABLE: HandlerTable<MAX_IRQ_COUNT> = HandlerTable::new();
 
+/// Deferred task rescheduling while an EL2 VCPU IRQ frame is active.
+#[cfg(feature = "deferred-irq-resched")]
+#[crate_interface::def_interface]
+pub trait IrqReschedIf {
+    /// Prevents preemption from switching tasks until the IRQ handler returns.
+    fn enter_irq();
+
+    /// Ends the IRQ deferral region without performing a task switch.
+    fn exit_irq();
+}
+
 /// Platform-independent IRQ dispatching.
 #[allow(dead_code)]
 pub(crate) fn dispatch_irq_common(irq_num: usize) {
@@ -51,15 +62,18 @@ pub(crate) fn register_handler_common(irq_num: usize, handler: IrqHandler) -> bo
 /// hypervisor for hypervisor reserved IRQ handling.
 #[register_trap_handler(IRQ)]
 pub fn handler_irq(irq_num: usize) -> bool {
+    #[cfg(feature = "deferred-irq-resched")]
+    crate_interface::call_interface!(IrqReschedIf::enter_irq);
+
     let guard = kernel_guard::NoPreempt::new();
     dispatch_irq(irq_num);
-    drop(guard); // rescheduling may occur when preemption is re-enabled.
-    // 注：drop 将会调用下列函数，进行任务抢占切换，导致当前sp发生改变;
-    // 此中断处理函数返回后，会在arm_vcpu::HANDLE_CURRENT_IRQ函数中以错误的SP寄存器，执行了.Lexception_return_el2返回操作，
-    // 将导致: arm_vcpu: Exception Class: 0x21 (Instruction Abort). EL2取指异常
-    //
-    // -> release() (若使能抢占) -> enable_preempt()
-    // -> current_check_preempt_pending() -> preempt_resched() -...-> context.rs::context_switch()
+    drop(guard);
+    // 为了防止drop() 调用的enable_preempt函数，进行任务抢占切换，
+    // 而导致当前SP发生改变，将破坏中断处理函数arm_vcpu::HANDLE_CURRENT_IRQ中的SP寄存器，
+    // 因此，这里延迟了任务抢占切换。
+
+    #[cfg(feature = "deferred-irq-resched")]
+    crate_interface::call_interface!(IrqReschedIf::exit_irq);
 
     true
 }

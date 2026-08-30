@@ -27,8 +27,10 @@ hv = [
     "page_table_entry/arm-el2",
     "arm_gicv2/el2",
     "arm_gicv2/hv",
+    "deferred-irq-resched",
     "dep:crate_interface",
 ]
+deferred-irq-resched = []
 ipi = ["irq"]
 
 [dependencies]
