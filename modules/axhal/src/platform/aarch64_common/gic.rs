@@ -133,6 +133,36 @@ pub fn inject_interrupt(vector: usize) {
 }
 
 #[cfg(feature = "hv")]
+pub fn disable_guest_timers() {
+    unsafe {
+        core::arch::asm!(
+            "msr cntp_ctl_el0, {0}",
+            "msr cntv_ctl_el0, {0}",
+            "msr cntp_cval_el0, {1}",
+            "msr cntv_cval_el0, {1}",
+            in(reg) 0u64,
+            in(reg) u64::MAX,
+            options(nomem, nostack),
+        );
+    }
+}
+
+#[cfg(feature = "hv")]
+pub fn write_icc_sgi1r(_value: u64) {
+    // For GICv2, SGI generation uses GICD_SGIR rather than system register
+}
+
+#[cfg(feature = "hv")]
+pub fn clean_up_guest_local_irqs() {
+    disable_guest_timers();
+    let hcr = GICH.get_hcr();
+    GICH.set_hcr(hcr & !1);
+    for i in 0..64 {
+        GICH.set_lr(i, 0);
+    }
+}
+
+#[cfg(feature = "hv")]
 pub struct MyVgic {}
 
 #[cfg(feature = "hv")]

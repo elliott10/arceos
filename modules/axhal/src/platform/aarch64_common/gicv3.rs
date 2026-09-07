@@ -202,8 +202,67 @@ pub fn inject_interrupt(vector: usize) {
         val |= 1 << 60; // group 1
         val |= 1 << 61; // HW: mapped to physical interrupt
         val |= 1 << 62; // state: pending
-        write_lr(free_lr as usize, val);
+        write_lr(free_lr as usize, val); // Write ICH_LR
     }
+}
+
+/// Clear all list registers on the current CPU.
+#[cfg(feature = "hv")]
+pub fn clear_all_lrs() {
+    let vtr = read_sysreg!(ich_vtr_el2) as usize;
+    let lr_num: usize = (vtr & 0xf) + 1;
+    for i in 0..lr_num {
+        write_lr(i, 0);
+    }
+}
+
+/// Disables EL1 physical and virtual timers on the current physical CPU.
+#[cfg(feature = "hv")]
+pub fn disable_guest_timers() {
+    unsafe {
+        core::arch::asm!(
+            "msr cntp_ctl_el0, {0}",
+            "msr cntv_ctl_el0, {0}",
+            "msr cntp_cval_el0, {1}",
+            "msr cntv_cval_el0, {1}",
+            in(reg) 0u64,
+            in(reg) u64::MAX,
+            options(nomem, nostack),
+        );
+    }
+}
+
+/// Writes to ICC_SGI1R_EL1 system register to send IPI/SGI.
+#[cfg(feature = "hv")]
+pub fn write_icc_sgi1r(value: u64) {
+    write_sysreg!(icc_sgi1r_el1, value);
+}
+
+/// Disables guest timer hardware and cleans up guest PPIs / LRs on the current physical CPU.
+#[cfg(feature = "hv")]
+pub fn clean_up_guest_local_irqs() {
+    // 1. Disable EL1 physical and virtual timers on this physical CPU
+    disable_guest_timers();
+
+    // 2. Disable all guest PPIs (16..32, except TIMER_IRQ_NUM 26 and VGIC_MAINTENANCE_IRQ 25) in GICR
+    use arm_gic_driver::local::cap::ConfigLocalIrq;
+    let mut gicd = GICD.lock();
+    if let Some(d) = gicd.as_mut() {
+        let gicr = d.get_gicr();
+        for irq in 16..32 {
+            if irq != TIMER_IRQ_NUM && irq != 25 {
+                let _ = gicr.irq_disable(irq.into());
+            }
+        }
+    }
+    drop(gicd);
+
+    // 3. Clear all List Registers
+    clear_all_lrs();
+
+    // 4. Deactivate guest timer interrupts if still active
+    eoi_irq(30);
+    eoi_irq(27);
 }
 
 fn read_lr(id: usize) -> u64 {
