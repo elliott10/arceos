@@ -27,8 +27,10 @@ pub const TIMER_IRQ_NUM: usize = arm_gic_driver::IntId::ppi(10).to_u32() as usiz
 
 /// The UART IRQ number.
 pub const UART_IRQ_NUM: usize = arm_gic_driver::IntId::spi(UART_IRQ as u32).to_u32() as usize;
-/// The IPI IRQ number.
-pub const IPI_IRQ_NUM: usize = translate_irq(1, InterruptType::SGI).unwrap();
+/// The vCPU Guest-usable SGIs: [0..14)
+pub const GUEST_SGI_MAX: usize = 14;
+/// The IPI IRQ number for Host inter-processor interrupts (uses SGI 15).
+pub const IPI_IRQ_NUM: usize = translate_irq(15, InterruptType::SGI).unwrap();
 
 const GICD_BASE: PhysAddr = pa!(GICD_PADDR);
 const GICR_BASE: PhysAddr = pa!(GICR_PADDR);
@@ -88,22 +90,29 @@ pub fn fetch_irq() -> usize {
 /// necessary, it also acknowledges the interrupt controller after handling.
 pub fn dispatch_irq(irq_num: usize) {
     trace!("dispatch_irq: {}", irq_num);
-    let intid: Option<IrqId>;
+    if irq_num >= 1020 {
+        warn!("Unknown interrupt number: {}", irq_num);
+        // eg: Spurious interrupt 1023
+        return;
+    }
+
+    let mut irq_num = irq_num;
     if irq_num == 0 {
-        intid = GICR.lock().as_mut().unwrap().ack();
-        trace!("interrupt {:?}", intid.unwrap());
-    } else {
-        intid = Some(IrqId::from(irq_num));
+        let intid: usize = GICR.lock().as_mut().unwrap().ack().unwrap().into();
+        if intid != 1023 {
+            irq_num = intid;
+            trace!("interrupt {:?}", intid);
+        }
     }
-    if let Some(intid) = intid {
-        crate::irq::dispatch_irq_common(intid.into());
-        let mut gicr = GICR.lock();
-        let gicr = gicr.as_mut().unwrap();
-        // The physical interface runs in split EOI mode (see init): drop the
-        // priority first, then deactivate the host-owned interrupt.
-        gicr.eoi(intid);
-        gicr.dir(intid);
-    }
+
+    let intid = IrqId::from(irq_num);
+    crate::irq::dispatch_irq_common(intid.into());
+    let mut gicr = GICR.lock();
+    let gicr = gicr.as_mut().unwrap();
+    // The physical interface runs in split EOI mode (see init): drop the
+    // priority first, then deactivate the host-owned interrupt.
+    gicr.eoi(intid);
+    gicr.dir(intid);
 }
 
 /// Reads and returns the value of the given aarch64 system register.
@@ -238,9 +247,10 @@ pub fn write_icc_sgi1r(value: u64) {
     write_sysreg!(icc_sgi1r_el1, value);
 }
 
-/// Disables guest timer hardware and cleans up guest PPIs / LRs on the current physical CPU.
+/// Disable guest timer hardware and cleans up guest PPIs / LRs on the current physical CPU.
 #[cfg(feature = "hv")]
 pub fn clean_up_guest_local_irqs() {
+    debug!("Clean up CPU{} guest irqs", this_cpu_id());
     // 1. Disable EL1 physical and virtual timers on this physical CPU
     disable_guest_timers();
 
