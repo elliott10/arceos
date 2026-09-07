@@ -8,7 +8,9 @@ use crate::trap::{IRQ, register_trap_handler};
 pub use crate::platform::irq::{register_handler, set_enable};
 
 #[cfg(all(target_arch = "aarch64", feature = "hv"))]
-pub use crate::platform::irq::{MyVgic, inject_interrupt};
+pub use crate::platform::irq::{
+    MyVgic, TIMER_IRQ_NUM, eoi_guest_irq, eoi_irq, inject_interrupt,
+};
 
 #[cfg(feature = "ipi")]
 pub use crate::platform::irq::{IPI_IRQ_NUM, send_sgi_all, send_sgi_one};

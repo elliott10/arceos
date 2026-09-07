@@ -97,7 +97,12 @@ pub fn dispatch_irq(irq_num: usize) {
     }
     if let Some(intid) = intid {
         crate::irq::dispatch_irq_common(intid.into());
-        GICR.lock().as_mut().unwrap().eoi(intid);
+        let mut gicr = GICR.lock();
+        let gicr = gicr.as_mut().unwrap();
+        // The physical interface runs in split EOI mode (see init): drop the
+        // priority first, then deactivate the host-owned interrupt.
+        gicr.eoi(intid);
+        gicr.dir(intid);
     }
 }
 
@@ -130,6 +135,31 @@ macro_rules! write_sysreg {
     }
 }
 
+/// Fully completes a host-owned physical interrupt (priority drop +
+/// deactivation; the physical interface runs in split EOI mode).
+#[cfg(feature = "hv")]
+pub fn eoi_irq(irq_num: usize) {
+    let intid = IrqId::from(irq_num);
+    let mut gicr = GICR.lock();
+    let gicr = gicr.as_mut().unwrap();
+    gicr.eoi(intid);
+    gicr.dir(intid);
+}
+
+/// Ends-of-interrupt for a physical interrupt that was acknowledged at VM
+/// exit and re-injected into a guest vCPU via a HW-mapped list register.
+///
+/// Only the priority is dropped (split EOI mode): the physical interrupt
+/// stays ACTIVE, and as long as the HW-bit list register owns it,
+/// the GIC suppresses re-signaling the physical line (like the guest EL1 timers).
+/// The guest's virtual EOI/DIR eventually
+/// deactivates the physical interrupt through the HW mapping.
+#[cfg(feature = "hv")]
+pub fn eoi_guest_irq(irq_num: usize) {
+    let intid = IrqId::from(irq_num);
+    GICR.lock().as_mut().unwrap().eoi(intid);
+}
+
 #[cfg(feature = "hv")]
 pub fn inject_interrupt(vector: usize) {
     // mask
@@ -150,7 +180,11 @@ pub fn inject_interrupt(vector: usize) {
         let lr_val = read_lr(i) as usize;
         // if a virtual interrupt is enabled and equals to the physical interrupt irq_id
         if (lr_val & LR_VIRTIRQ_MASK) == vector {
-            trace!("virtual irq {} enables again", vector);
+            debug!("virtual irq {} enables again", vector);
+            // The virtual interrupt is already pending/active in a list
+            // register: don't queue a duplicate entry. Otherwise repeated
+            // injections would exhaust all list registers.
+            return;
         }
     }
     trace!("use free lr {} to inject irq {}", free_lr, vector);
@@ -158,10 +192,16 @@ pub fn inject_interrupt(vector: usize) {
     if free_lr == -1 {
         panic!("No free list register to inject IRQ {}", vector);
     } else {
-        let mut val = vector as u64; // vector
+        // HW-mapped virtual interrupt: the list register owns the physical
+        // interrupt (pINTID == vINTID here), so the GIC suppresses further
+        // physical signaling until the guest's virtual EOI/DIR deactivates it.
+        // The virtual state is set to Pending (0b01) so the GIC CPU interface
+        // signals the virtual interrupt to the guest vCPU.
+        let mut val = vector as u64; // vINTID [31:0]
+        val |= (vector as u64) << 32; // pINTID [44:32]
         val |= 1 << 60; // group 1
-        val |= 1 << 62; // state pending
-        // hardware interrupt not supported
+        val |= 1 << 61; // HW: mapped to physical interrupt
+        val |= 1 << 62; // state: pending
         write_lr(free_lr as usize, val);
     }
 }
@@ -276,24 +316,16 @@ pub(crate) fn init_primary() {
     GICD.lock().replace(gicd);
     GICR.lock().replace(interface);
 
+    // Use split EOI mode on the physical CPU interface: `eoi()` only drops
+    // the priority, `dir()` deactivates. By setting GICC_CTLR::EOIMODENS.
+    // This lets the hypervisor inject a physical interrupt to a guest
+    // while keeping the physical interrupt ACTIVE,
+    // until the guest's virtual EOI/DIR deactivates it through the HW mapping.
+    #[cfg(feature = "hv")]
+    GICR.lock().as_mut().unwrap().set_eoi_mode(true);
+
     // SAFETY: Set the SRE[0] bit to 1 to enable Group 1 interrupts.
     ICC_SRE_EL2.set(0b1);
-
-    // let waker = self[current_cpu().id].WAKER.get();
-    // self[current_cpu().id].WAKER.set(waker & !GICR_WAKER_PSLEEP_BIT as u32);
-    // while (self[current_cpu().id].WAKER.get() & GICR_WAKER_CASLEEP_BIT as u32) != 0 {}
-
-    // let gicd = arm_gic_driver::v3::Gic::new(
-    //     NonNull::new(phys_to_virt(GICD_BASE).as_mut_ptr()).unwrap(),
-    //     NonNull::new(phys_to_virt(GICC_BASE).as_mut_ptr()).unwrap(),
-    //     arm_gic_driver::v3::Security::OneNS,
-    // );
-    // let interface = gicd.cpu_interface();
-
-    // GICD.lock().replace(gicd);
-    // GICC.lock().replace(interface);
-
-    // disable_irqs();
 }
 
 /// Initializes GICR on secondary CPUs.
@@ -302,4 +334,9 @@ pub(crate) fn init_secondary() {
     let mut interface = GICD.lock().as_mut().unwrap().cpu_local().unwrap();
     interface.open().unwrap();
     GICR.lock().replace(interface);
+
+    // The physical CPU interface is per-CPU: split EOI mode (see
+    // `init_primary`) must be enabled on every CPU.
+    #[cfg(feature = "hv")]
+    GICR.lock().as_mut().unwrap().set_eoi_mode(true);
 }

@@ -109,6 +109,19 @@ pub(crate) fn init_primary() {
 }
 
 #[cfg(feature = "hv")]
+pub fn eoi_irq(irq_num: usize) {
+    GICC.eoi(irq_num as _);
+    GICC.dir(irq_num as _);
+}
+
+/// GICv2 variant of [`super::gicv3::eoi_guest_irq`]: GICv2 list registers
+/// don't support HW mapping, just complete the physical interrupt.
+#[cfg(feature = "hv")]
+pub fn eoi_guest_irq(irq_num: usize) {
+    eoi_irq(irq_num);
+}
+
+#[cfg(feature = "hv")]
 pub fn inject_interrupt(vector: usize) {
     let hcr = GICH.get_hcr();
     GICH.set_hcr(hcr | 1 << 0);
