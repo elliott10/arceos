@@ -227,50 +227,64 @@ pub fn eoi_guest_irq(irq_num: usize) {
     GICR.lock().as_mut().unwrap().eoi(intid);
 }
 
+/// Inject interrupt into the vCPU hosted by the current physical core
 #[cfg(feature = "hv")]
 pub fn inject_interrupt(vector: usize) {
-    // mask
     const LR_VIRTIRQ_MASK: usize = (1 << 32) - 1;
 
-    let elsr: u64 = read_sysreg!(ich_elrsr_el2);
-    let vtr = read_sysreg!(ich_vtr_el2) as usize;
-    let lr_num: usize = (vtr & 0xf) + 1;
+    let ich_elrsr: u64 = read_sysreg!(ich_elrsr_el2);
+    let ich_vtr = read_sysreg!(ich_vtr_el2) as usize;
+    let lr_num: usize = (ich_vtr & 0xf) + 1;
     let mut free_lr = -1 as isize;
     for i in 0..lr_num {
-        // find a free list register
-        if (1 << i) & elsr > 0 {
+        // 查找空闲 List Register
+        if (1 << i) & ich_elrsr > 0 {
             if free_lr == -1 {
                 free_lr = i as isize;
             }
             continue;
         }
-        let lr_val = read_lr(i) as usize;
-        // if a virtual interrupt is enabled and equals to the physical interrupt irq_id
-        if (lr_val & LR_VIRTIRQ_MASK) == vector {
-            debug!("virtual irq {} enables again", vector);
-            // The virtual interrupt is already pending/active in a list
-            // register: don't queue a duplicate entry. Otherwise repeated
-            // injections would exhaust all list registers.
+        let ich_lr_val = read_ich_lr(i) as usize;
+        if (ich_lr_val & LR_VIRTIRQ_MASK) == vector {
+            // 如果虚拟中断已经处于 Pending/Active 状态，避免重复队列
+            debug!("virtual irq {} is already in LR", vector);
             return;
         }
     }
     trace!("use free lr {} to inject irq {}", free_lr, vector);
 
     if free_lr == -1 {
-        panic!("No free list register to inject IRQ {}", vector);
+        warn!("No free list register to inject IRQ {}", vector);
     } else {
-        // HW-mapped virtual interrupt: the list register owns the physical
-        // interrupt (pINTID == vINTID here), so the GIC suppresses further
-        // physical signaling until the guest's virtual EOI/DIR deactivates it.
-        // The virtual state is set to Pending (0b01) so the GIC CPU interface
-        // signals the virtual interrupt to the guest vCPU.
         let mut val = vector as u64; // vINTID [31:0]
-        val |= (vector as u64) << 32; // pINTID [44:32]
-        val |= 1 << 60; // group 1
-        val |= 1 << 61; // HW: mapped to physical interrupt
-        val |= 1 << 62; // state: pending
-        write_lr(free_lr as usize, val); // Write ICH_LR
+        val |= 1 << 60;                   // Group 1
+        val |= 1 << 62;                   // State: Pending (0b01)
+        val |= (0xa0 as u64) << 48;       // Priority 0xa0
+        // 注：被注入的el1虚拟中断与el2物理中断，属于不同特权级，硬件不会拿el2物理中断的优先级去和Guest虚拟优先级做比较。
+        // 所以el2的物理中断，即使设置的优先级较低（中断优先级的设置值满足：(Priority<ICC_PMR_EL1)， 而不被硬件屏蔽），也可以抢占EL1中正在执行的较高优先级的虚拟中断。
+
+        if vector < 16 {
+            // SGI (0..16): Pure virtual interrupt (HW = 0)
+            val &= !(1 << 61);            // 纯虚拟中断，不绑定物理硬件中断源
+        } else {
+            // PPI,SPI (>= 16): HW-mapped virtual interrupt (HW = 1)
+            val |= (vector as u64) << 32; // pINTID [44:32]
+            val |= 1 << 61;               // HW: mapped to physical interrupt
+        }
+
+        // 当Guest收到中断读取ICV_IAR1_EL1后，硬件会自动扫描所有的ICH_LR<n>_EL2寄存器，找出当前处于Pending状态且优先级最高的那个虚拟中断。
+        // 硬件从该ICH_LR寄存器中提取出vINTID并将中断号返回给Guest X0寄存器。
+        // 与此同时，硬件自动将该ICH_LR寄存器中的State字段从Pending修改为Active；
+        write_ich_lr(free_lr as usize, val); // Write ICH_LR
+        debug!("Injected virtual irq {} into ich_lr{}", vector, free_lr);
     }
+}
+
+/// Convenience alias for virtual SGI injection.
+#[cfg(feature = "hv")]
+#[inline]
+pub fn inject_virtual_sgi(vector: usize) {
+    inject_interrupt(vector);
 }
 
 /// Clear all list registers on the current CPU.
@@ -279,7 +293,7 @@ pub fn clear_all_lrs() {
     let vtr = read_sysreg!(ich_vtr_el2) as usize;
     let lr_num: usize = (vtr & 0xf) + 1;
     for i in 0..lr_num {
-        write_lr(i, 0);
+        write_ich_lr(i, 0);
     }
 }
 
@@ -333,7 +347,7 @@ pub fn clean_up_guest_local_irqs() {
     eoi_irq(27);
 }
 
-fn read_lr(id: usize) -> u64 {
+fn read_ich_lr(id: usize) -> u64 {
     let id = id as u64;
     match id {
         //TODO get lr size from gic reg
@@ -359,7 +373,7 @@ fn read_lr(id: usize) -> u64 {
     }
 }
 
-fn write_lr(id: usize, val: u64) {
+fn write_ich_lr(id: usize, val: u64) {
     let id = id as u64;
     match id {
         0 => write_sysreg!(ich_lr0_el2, val),

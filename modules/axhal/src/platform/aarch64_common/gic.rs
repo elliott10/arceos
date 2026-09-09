@@ -50,6 +50,11 @@ pub fn set_enable(irq_num: usize, enabled: bool) {
     GICD.lock().set_enable(irq_num as _, enabled);
 }
 
+/// Sets the priority of the given IRQ.
+pub fn set_priority(irq_num: usize, priority: usize) {
+    GICD.lock().set_priority(irq_num, priority as u8);
+}
+
 /// Sends Software Generated Interrupt (SGI)(s) (usually IPI) to the given dest CPU.
 pub fn send_sgi_one(dest_cpu_id: usize, irq_num: usize) {
     GICD.lock().send_sgi(dest_cpu_id, irq_num);
@@ -131,6 +136,9 @@ pub fn inject_interrupt(vector: usize) {
     lr |= 1 << 28;
     GICH.set_lr(0, lr as u32);
 }
+
+#[cfg(feature = "hv")]
+pub fn inject_virtual_sgi(_vector: usize) {}
 
 #[cfg(feature = "hv")]
 pub fn disable_guest_timers() {
