@@ -531,7 +531,7 @@ impl AxRunQueue {
             !axhal::arch::irqs_enabled(),
             "IRQs must be disabled during scheduling"
         );
-        trace!(
+        debug!(
             "context switch: {} -> {}",
             prev_task.id_name(),
             next_task.id_name()

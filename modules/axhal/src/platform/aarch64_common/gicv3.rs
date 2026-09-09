@@ -11,7 +11,7 @@ use arm_gicv2::{translate_irq, InterruptType};
 use arm_gicv2::GicHypervisorInterface;
 use memory_addr::{MemoryAddr, PhysAddr};
 
-use aarch64_cpu::registers::{ICC_SRE_EL2, SCTLR_EL3::I};
+use aarch64_cpu::registers::{ICC_SRE_EL2, MPIDR_EL1, SCTLR_EL3::I};
 use tock_registers::interfaces::{Readable, Writeable};
 
 /// The maximum number of IRQs.
@@ -61,6 +61,64 @@ pub fn set_enable(irq_num: usize, enabled: bool) {
         } else {
             d.irq_disable(irq_num.into()).unwrap();
         }
+    }
+}
+
+/// Sets the priority of an SGI/PPI (INTID < 32) in the Redistributor for the current CPU.
+/// GICR_IPRIORITYR<n> registers must be accessed using 32-bit word transactions.
+fn set_gicr_priority(irq_num: usize, priority: u8) {
+    let mpidr = MPIDR_EL1.get();
+    let aff0 = (mpidr & 0xff) as u32;
+    let aff1 = ((mpidr >> 8) & 0xff) as u32;
+    let aff2 = ((mpidr >> 16) & 0xff) as u32;
+    let aff3 = ((mpidr >> 32) & 0xff) as u32;
+    let target_aff = aff0 | (aff1 << 8) | (aff2 << 16) | (aff3 << 24);
+
+    let mut ptr = phys_to_virt(GICR_BASE).as_mut_ptr();
+    let mut sgi_base = None;
+
+    // 循环读取gicr typer寄存器信息，获取匹配当前CPU核的GICR, 后面设置 IPRIORITYR:0x10400 寄存器
+    loop {
+        // GICR TYPER, aff3 aff2 aff1 aff0 : [63:32], Processor_Number: bits [23:8], Last: bit[4]
+        let typer = unsafe { core::ptr::read_volatile(ptr.add(0x0008) as *const u64) };
+        let aff = (typer >> 32) as u32;
+        if aff == target_aff {
+            sgi_base = Some(unsafe { ptr.add(0x10000) });
+            break;
+        }
+        if (typer & (1 << 4)) != 0 {
+            // Last Redistributor
+            break;
+        }
+        // GICR TYPER, VLPIS: bit[1], PLPIS: bit[0]
+        let vlpis = (typer & (1 << 1)) != 0;
+        let stride = if vlpis { 0x40000 } else { 0x20000 };
+        ptr = unsafe { ptr.add(stride) };
+    }
+    let sgi = sgi_base.unwrap_or_else(|| unsafe { phys_to_virt(GICR_BASE).as_mut_ptr().add(0x10000) });
+
+    // GICR_IPRIORITYR:0x10400 starts at offset 0x0400 from SGI_base
+    unsafe {
+        let ipriorityr_ptr = sgi.add(0x0400 + (irq_num / 4) * 4) as *mut u32;
+        let mut val = core::ptr::read_volatile(ipriorityr_ptr);
+        let byte_offset = (irq_num % 4) * 8;
+        val &= !(0xff << byte_offset);
+        val |= (priority as u32) << byte_offset;
+
+        debug!("set_gicr_priority, ipriorityr={:p}, val=0x{:08x}", ipriorityr_ptr, val);
+        core::ptr::write_volatile(ipriorityr_ptr, val);
+    }
+}
+
+/// Sets the priority of the given IRQ.
+pub fn set_priority(irq_num: usize, priority: usize) {
+    debug!("GICD v3 set irq:{} priority:{:#x}", irq_num, priority);
+    if irq_num < 32 {
+        set_gicr_priority(irq_num, priority as u8);
+    } else {
+        let mut gicd = GICD.lock();
+        let d = gicd.as_mut().unwrap();
+        d.set_priority(irq_num.into(), priority).unwrap();
     }
 }
 
@@ -363,6 +421,24 @@ pub fn send_sgi_all(vector: usize) {
 // dummy implementation
 pub struct MyVgic{}
 
+/// Sets the EOI mode for the Non-secure physical CPU interface.
+/// `ICC_CTLR_EL1` controls the Non-secure physical CPU interface, 
+/// and is accessed directly from EL2 (with ICC_SRE_EL2.Enable=1).
+/// Setting bit 1 (`EOImode`) enables split EOI mode:
+/// - Write to `ICC_EOIR1_EL1` performs priority drop only.
+/// - Write to `ICC_DIR_EL1` performs interrupt deactivation.
+#[cfg(feature = "hv")]
+fn set_eoi_mode(split: bool) {
+    const ICC_CTLR_EL1_EOIMODE: u64 = 1 << 1;
+    let mut ctlr: u64 = read_sysreg!(icc_ctlr_el1);
+    if split {
+        ctlr |= ICC_CTLR_EL1_EOIMODE;
+    } else {
+        ctlr &= !ICC_CTLR_EL1_EOIMODE;
+    }
+    write_sysreg!(icc_ctlr_el1, ctlr);
+}
+
 /// Initializes GICD, GICC on the primary CPU.
 pub(crate) fn init_primary() {
     info!("Initialize GICv3...");
@@ -385,16 +461,24 @@ pub(crate) fn init_primary() {
     GICD.lock().replace(gicd);
     GICR.lock().replace(interface);
 
-    // Use split EOI mode on the physical CPU interface: `eoi()` only drops
-    // the priority, `dir()` deactivates. By setting GICC_CTLR::EOIMODENS.
+    // ICC_SRE_EL2控制处于EL2级别Hypervisor以及EL1/EL0级别GuestOS是否允许通过“系统寄存器”来访问 GIC.
+    ICC_SRE_EL2.set(0b1);
+
+    // ICC_BPR1_EL1用于控制Non-secure Group1的中断的组优先级的抢占
+    // 注：Qemu中，可以在中断处理函数中，读取寄存器ICC_RPR_EL1， 获取当前CPU处理中断的实际优先级。无中断的CPU空闲优先级默认为：0xFF.
+    // 当设置ICC_BPR1_EL1=0时，读取的获得硬件支持的最小值是：0x3,
+    // 表示Priority共8位优先级被切分成：GroupPriority[7:4],Subpriority[3:0], 属于Linux最常用的配置。
+    // 当设置寄存器ICC_PMR_EL1=0xff时，读取的获得值是：0xf8(0b1111_1000),说明硬件实现了Priority共8位优先级其中的高5位。
+    write_sysreg!(icc_bpr1_el1, 0x3);
+
+    // Use split EOI mode on the physical CPU interface:
+    // `eoi()` only drops the priority, `dir()` deactivates.
+    // 通过置位ICC_CTLR_EL1::EOImode，中断处理时，当CPU访问EOI后，CPU当前的优先级改变,还需写DIR寄存器解除中断的激活状态。
     // This lets the hypervisor inject a physical interrupt to a guest
     // while keeping the physical interrupt ACTIVE,
     // until the guest's virtual EOI/DIR deactivates it through the HW mapping.
     #[cfg(feature = "hv")]
-    GICR.lock().as_mut().unwrap().set_eoi_mode(true);
-
-    // SAFETY: Set the SRE[0] bit to 1 to enable Group 1 interrupts.
-    ICC_SRE_EL2.set(0b1);
+    set_eoi_mode(true);
 }
 
 /// Initializes GICR on secondary CPUs.
@@ -403,9 +487,10 @@ pub(crate) fn init_secondary() {
     let mut interface = GICD.lock().as_mut().unwrap().cpu_local().unwrap();
     interface.open().unwrap();
     GICR.lock().replace(interface);
+    write_sysreg!(icc_bpr1_el1, 0x3);
 
     // The physical CPU interface is per-CPU: split EOI mode (see
     // `init_primary`) must be enabled on every CPU.
     #[cfg(feature = "hv")]
-    GICR.lock().as_mut().unwrap().set_eoi_mode(true);
+    set_eoi_mode(true);
 }

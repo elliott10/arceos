@@ -122,5 +122,8 @@ pub(crate) fn init_percpu() {
         }
     }
     #[cfg(feature = "irq")]
-    crate::platform::irq::set_enable(crate::platform::irq::TIMER_IRQ_NUM, true);
+    {
+        crate::platform::irq::set_priority(crate::platform::irq::TIMER_IRQ_NUM, 0x40);
+        crate::platform::irq::set_enable(crate::platform::irq::TIMER_IRQ_NUM, true);
+    }
 }

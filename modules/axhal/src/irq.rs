@@ -5,7 +5,7 @@ use handler_table::HandlerTable;
 use crate::platform::irq::{MAX_IRQ_COUNT, dispatch_irq};
 use crate::trap::{IRQ, register_trap_handler};
 
-pub use crate::platform::irq::{register_handler, set_enable};
+pub use crate::platform::irq::{register_handler, set_enable, set_priority};
 
 #[cfg(all(target_arch = "aarch64", feature = "hv"))]
 pub use crate::platform::irq::*;
