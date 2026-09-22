@@ -117,6 +117,14 @@ else
   $(error "ARCH" must be one of "x86_64", "riscv64", "aarch64" or "loongarch64")
 endif
 
+ifeq ($(ARCH), riscv64)
+	# Force hardware floating-point and rebuild core/alloc/compiler_builtins
+	# so all objects share the same floating-point ABI.
+	#RUSTFLAGS += -C target-feature=+f,+d
+        BUILD_STD_ARGS += -Z build-std=core,alloc,compiler_builtins
+	BUILD_STD_ARGS += -Z build-std-features=compiler-builtins-mem
+endif
+
 export AX_ARCH=$(ARCH)
 export AX_PLATFORM=$(PLAT_NAME)
 export AX_MODE=$(MODE)
@@ -227,7 +235,7 @@ endif
 
 clean: clean_c
 	rm -rf $(APP)/*.bin $(APP)/*.elf $(OUT_CONFIG)
-	cargo clean
+	cargo clean --target-dir $(TARGET_DIR)
 
 clean_c::
 	rm -rf ulib/axlibc/build_*
